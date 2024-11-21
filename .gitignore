@@ -1,0 +1,30 @@
+#build stuff
+build/
+
+# personal stuff
+data.json
+
+#IDE stuff
+.vscode/
+.idea/
+*.user
+*.userprefs
+
+# compiled object files and executables
+*.o
+*.a
+*.so
+*.exe
+*.out
+*.app
+
+# temporary files and backups
+*.swp
+*.bak
+*.tmp
+
+# logs (dunno if this will be necessary honestly)
+*.log
+
+# generated files (for example, those created during the build process)
+*.generated.*
