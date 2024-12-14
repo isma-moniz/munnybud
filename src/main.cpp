@@ -2,5 +2,7 @@
 
 int main(void) {
     StorageHandler sHandler;
-    sHandler.storeExpense(120, "electronics", "new headphones", "2024-11-17");
+    json expenses;
+    sHandler.retrieveExpensesByDate("2024-11-17", 2, expenses);
+    std::cout << expenses << std::endl;
 }
