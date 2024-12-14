@@ -66,15 +66,14 @@ void StorageHandler::storeExpense(float amount, const std::string& category, con
  * @brief Retrieves expenses from the JSON file within a specified date range.
  *
  * This function retrieves all expenses for a given date or within a specified range
- * of days from the base date. The result is returned as a JSON array.
+ * of days from the base date. Prints the result as a JSON array.
  *
  * @param date The base date to retrieve expenses from (format "YYYY-MM-DD").
  * @param range The number of days to include in the range (0 for exact date).
- * @param result The JSON object to store the resulting expenses.
  *
  * @return 0 on success, -1 on failure.
  */
-int StorageHandler::retrieveExpensesByDate(const std::string&date, int range, json& result) {
+int StorageHandler::retrieveExpensesByDate(const std::string&date, int range) {
     json data;
 
     // opening the file for reading
@@ -93,7 +92,7 @@ int StorageHandler::retrieveExpensesByDate(const std::string&date, int range, js
 
     input_file.close();
 
-    result = json::array();
+    json result = json::array();
 
     if (range == 1) {
         if (data.contains(date)) {
@@ -114,6 +113,8 @@ int StorageHandler::retrieveExpensesByDate(const std::string&date, int range, js
             }
         }
     }
+
+    std::cout << result << std::endl;
 
     return 0;
 }

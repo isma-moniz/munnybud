@@ -32,7 +32,7 @@ using json = nlohmann::json;
 class StorageHandler {
 public:
     void storeExpense(float amount, const std::string& category, const std::string& description, const std::string& date);
-    int retrieveExpensesByDate(const std::string&date, int range, json& result);
+    int retrieveExpensesByDate(const std::string&date, int range);
 };
 
 #endif
