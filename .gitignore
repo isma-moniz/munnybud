@@ -4,6 +4,10 @@ build/
 # personal stuff
 data.json
 
+# documentation
+doc/
+Doxyfile
+
 #IDE stuff
 .vscode/
 .idea/

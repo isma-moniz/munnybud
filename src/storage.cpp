@@ -10,15 +10,16 @@ using json = nlohmann::json;
 std::string jsonFileName = "../data.json";
 
 /**
- * @brief StorageHandler function for storing expenses in the JSON file
+ * @brief Stores an expense in the JSON file.
  *
- * @param amount The amount spent
- * @param category The category of the expense
- * @param description Optional description of the expense
- * @param date Expense date
+ * This function appends a new expense entry to the JSON file. If the file does not exist,
+ * it initializes a new JSON object. The expense includes details such as the amount,
+ * category, description, and date.
  *
- * Low level function to store expenses in the json file. The date is provided here but will default to the current date many times
- * in the higher level implementation
+ * @param amount The amount spent in the expense.
+ * @param category The category of the expense (e.g., "groceries", "entertainment").
+ * @param description A brief description of the expense.
+ * @param date The date of the expense in the format "YYYY-MM-DD".
  */
 void StorageHandler::storeExpense(float amount, const std::string& category, const std::string& description, const std::string& date) {
 
@@ -57,12 +58,17 @@ void StorageHandler::storeExpense(float amount, const std::string& category, con
 }
 
 /**
-* @brief Storage handler function to retrieve expenses from the JSON file
-*
-* @param date Base date to retrieve expenses from
-* @param ranger Retrieve transactions in this span from the base date
-* @param result json object to store the result in
-*/
+ * @brief Retrieves expenses from the JSON file within a specified date range.
+ *
+ * This function retrieves all expenses for a given date or within a specified range
+ * of days from the base date. The result is returned as a JSON array.
+ *
+ * @param date The base date to retrieve expenses from (format "YYYY-MM-DD").
+ * @param range The number of days to include in the range (0 for exact date).
+ * @param result The JSON object to store the resulting expenses.
+ *
+ * @return 0 on success, -1 on failure.
+ */
 int StorageHandler::retrieveExpensesByDate(const std::string&date, int range, json& result) {
     json data;
 

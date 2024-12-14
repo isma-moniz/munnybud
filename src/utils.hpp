@@ -1,3 +1,10 @@
+/**
+* @file 
+* @brief Utils header file
+*
+* Contains utilities such as date manipulation, parsing, etc...
+*/
+
 #include <chrono>
 #include <iomanip>
 #include <sstream>
