@@ -1,9 +1,14 @@
 /**
-* @file 
-* @brief Storage handler implementation file
-*
-* Interacts with the JSON storage file, performing the low level operations such as storing and retrieving data
-*/
+ * @file utils.cpp
+ * @author Ismael Moniz (hismamoniz@gmail.com)
+ * @brief Implementation file for storage management functions that interact with the json data directly
+ * @version 0.1
+ * @date 2024-12-14
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
+
 
 #include "storage.hpp"
 using json = nlohmann::json;

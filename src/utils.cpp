@@ -1,9 +1,13 @@
 /**
-* @file 
-* @brief Utils implementation file
-*
-* Contains utilities such as date manipulation, parsing, etc...
-*/
+ * @file utils.cpp
+ * @author Ismael Moniz (hismamoniz@gmail.com)
+ * @brief Implementation file for utils such as date manipulation, date parsing, etc.
+ * @version 0.1
+ * @date 2024-12-14
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 
 #include "utils.hpp"
 #include <chrono>
@@ -59,4 +63,22 @@ std::optional<std::chrono::system_clock::time_point> parseDate(const std::string
     dateTm.tm_sec = 0;
 
     return std::chrono::system_clock::from_time_t(mktime(&dateTm));
+}
+
+/**
+ * @brief Gets the current date in a string format
+ * 
+ * @return std::string with current date in YYYY-mm-dd format
+ */
+std::string getCurrentDate() {
+    auto now = std::chrono::system_clock::now();
+
+    time_t time_now = std::chrono::system_clock::to_time_t(now);
+
+    struct tm time_tm = *std::localtime(&time_now);
+
+    std::stringstream ss;
+    ss << std::put_time(&time_tm, "%Y-%m-%d");
+
+    return ss.str();
 }

@@ -1,8 +1,10 @@
-#include "storage.hpp"
+#include "commands.hpp"
+#include "interface.hpp"
 
-int main(void) {
-    StorageHandler sHandler;
-    json expenses;
-    sHandler.retrieveExpensesByDate("2024-11-17", 2, expenses);
-    std::cout << expenses << std::endl;
+int main(int argc, char* argv[]) {
+    if (argc>1) {
+        return handleQuickInput(argc, argv);
+    } else {
+        return runInterface();
+    }
 }

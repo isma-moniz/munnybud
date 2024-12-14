@@ -1,9 +1,16 @@
 /**
-* @file 
-* @brief Utils header file
-*
-* Contains utilities such as date manipulation, parsing, etc...
-*/
+ * @file utils.cpp
+ * @author Ismael Moniz (hismamoniz@gmail.com)
+ * @brief Header file for utils such as date manipulation, date parsing, etc.
+ * @version 0.1
+ * @date 2024-12-14
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
+
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include <chrono>
 #include <iomanip>
@@ -15,6 +22,7 @@
 
 bool isDateInRange(const std::string& baseDate, const std::string& testDate, int range);
 std::optional<std::chrono::system_clock::time_point> parseDate(const std::string& dateString);
+std::string getCurrentDate();
 
 enum daysByMonth {
     jan = 31,
@@ -30,3 +38,5 @@ enum daysByMonth {
     nov = 30,
     feb_bi = 29
 };
+
+#endif
