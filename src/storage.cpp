@@ -25,8 +25,10 @@ std::string jsonFileName = "../data.json";
  * @param category The category of the expense (e.g., "groceries", "entertainment").
  * @param description A brief description of the expense.
  * @param date The date of the expense in the format "YYYY-MM-DD".
+ *
+ *@return 0 on success, -1 on failure
  */
-void StorageHandler::storeExpense(float amount, const std::string& category, const std::string& description, const std::string& date) {
+int StorageHandler::storeExpense(float amount, const std::string& category, const std::string& description, const std::string& date) {
 
     // expense in json format
     json expense = {
@@ -41,9 +43,10 @@ void StorageHandler::storeExpense(float amount, const std::string& category, con
 
     if (input_file.is_open()) {
         try {
-            data = {json::parse(input_file)};
+            data = json::parse(input_file);
         } catch (json::parse_error e) {
             std::cout << e.what() << std::endl;
+            return -1;
         }
         input_file.close();
     } else {
@@ -51,15 +54,28 @@ void StorageHandler::storeExpense(float amount, const std::string& category, con
         json data = json::object();
     }
 
+    if (!data.is_object()) {
+        std::cerr << "Error: Root JSON structure is not an object. Resetting to empty object." << std::endl;
+        data = json::object();
+    }
+
+    if (!data.contains(date)) {
+        data[date] = json::array();
+    } else if (!data[date].is_array()) {
+        std::cerr << "Error: data[date] is not an array. Overwriting with a new array.\n";
+    }
+
     try {
         data[date].push_back(expense);
     } catch (json::exception e) {
         std::cout << e.what() << std::endl;
+        return -1;
     }
 
     std::ofstream output_file(jsonFileName);
     output_file << data.dump(4); // pretty print
     output_file.close();
+    return 0;
 }
 
 /**

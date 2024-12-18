@@ -6,16 +6,6 @@ int handleQuickInput(int argc, char* argv[]) {
     StorageHandler storageHandler;
 
     argparse::ArgumentParser program("munnybud");
-
-    // main command
-    program.add_argument("operation")
-        .help("The operation you want to perform: add, del or view")
-        .action([](const std::string& op){
-            if (op != "add" && op != "del" && op != "view") {
-                throw std::runtime_error("Invalid operation: must be 'add', 'del' or 'view'");
-            }
-            return op;
-    });
     
     // 'add' subcommand
     argparse::ArgumentParser add_cmd("add");
@@ -30,7 +20,7 @@ int handleQuickInput(int argc, char* argv[]) {
     
     add_cmd.add_argument("amount")
         .help("Amount of money earned or spent")
-        .scan<'d', float>();
+        .scan<'g', float>();
 
     add_cmd.add_argument("-l", "--label")
         .help("Brief description/label for the expense")
@@ -38,7 +28,7 @@ int handleQuickInput(int argc, char* argv[]) {
     
     add_cmd.add_argument("-c", "--category")
         .help("Expense category")
-        .default_value("default");
+        .default_value(std::string("default"));
 
     add_cmd.add_argument("-d", "--date")
         .help("Date of the transaction")
@@ -53,7 +43,7 @@ int handleQuickInput(int argc, char* argv[]) {
         .help("The base date of the transactions you want to consult")
         .required();
     
-    view_cmd.add_argument("-r", "--range")
+    view_cmd.add_argument("r", "--range")
         .help("The range in days of the transactions to show. 1 will show the base day only, 2 will show the next also")
         .default_value(1)
         .scan<'i', int>();
@@ -69,16 +59,20 @@ int handleQuickInput(int argc, char* argv[]) {
         return -1;
     }
 
-    std::string operation = program.get<std::string>("operation");
-    if (operation == "add") {
+    if (program.is_subcommand_used("add")) {
+        std::string transaction = add_cmd.get<std::string>("transaction");
         float amount = add_cmd.get<float>("amount");
         std::string category = add_cmd.get<std::string>("--category");
         std::string label = add_cmd.get<std::string>("--label");
         std::string date = add_cmd.get<std::string>("--date");
 
-        storageHandler.storeExpense(amount, category, label, date);
+        if (storageHandler.storeExpense(amount, category, label, date) < 0) {
+            return -1;
+        };
+        
         std::cout << "Transaction stored!\n";
-    } else if (operation == "view") {
+
+    } else if (program.is_subcommand_used("view")) {
         std::string date = view_cmd.get<std::string>("--date");
         int rng = view_cmd.get<int>("--range");
 
