@@ -1,6 +1,8 @@
 #include "commands.hpp"
+#include "argparse.hpp"
 #include "storage.hpp"
 #include "utils.hpp"
+#include <ostream>
 
 int handleQuickInput(int argc, char* argv[]) {
     StorageHandler storageHandler;
@@ -48,6 +50,9 @@ int handleQuickInput(int argc, char* argv[]) {
         .default_value(1)
         .scan<'i', int>();
 
+    argparse::ArgumentParser balance_cmd("balance");
+
+    program.add_subparser(balance_cmd);
     program.add_subparser(add_cmd);
     program.add_subparser(view_cmd);
 
@@ -83,6 +88,9 @@ int handleQuickInput(int argc, char* argv[]) {
         }
 
         printResults(result);
+    } else if (program.is_subcommand_used("balance")) {
+        int balance = storageHandler.retrieveBalance();
+        std::cout << "Your current balance: " << balance << std::endl;
     }
     return 0;
 }

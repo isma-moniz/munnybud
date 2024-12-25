@@ -33,6 +33,7 @@ class StorageHandler {
 public:
     int storeExpense(float amount, const std::string& category, const std::string& description, const std::string& date);
     int retrieveExpensesByDate(const std::string&date, int range, json::array_t& result);
+    float retrieveBalance();
 };
 
 #endif

@@ -67,6 +67,7 @@ int StorageHandler::storeExpense(float amount, const std::string& category, cons
 
     try {
         data[date].push_back(expense);
+        data["balance"] = static_cast<float>(data["balance"]) - amount;
     } catch (json::exception e) {
         std::cout << e.what() << std::endl;
         return -1;
@@ -130,4 +131,30 @@ int StorageHandler::retrieveExpensesByDate(const std::string&date, int range, js
     }
 
     return 0;
+}
+/**
+ * @brief Retrieves the current balance from the JSON file
+ *
+ * @return The balance as a float
+ */
+float StorageHandler::retrieveBalance() {
+    json data;
+
+    // opening the file for reading
+    std::ifstream input_file(jsonFileName);
+    if (!input_file) {
+        std::cerr << "Error: File " << jsonFileName << " could not be opened\n";
+        return -1;
+    }
+
+    try {
+        data = json::parse(input_file);
+    } catch(json::parse_error e) {
+        std::cout << e.what() << std::endl;
+        return -1;
+    }
+
+    input_file.close();
+
+    return data.value("balance", 0);
 }
