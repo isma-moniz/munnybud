@@ -89,7 +89,7 @@ int StorageHandler::storeExpense(float amount, const std::string& category, cons
  *
  * @return 0 on success, -1 on failure.
  */
-int StorageHandler::retrieveExpensesByDate(const std::string&date, int range) {
+int StorageHandler::retrieveExpensesByDate(const std::string&date, int range, json::array_t& result) {
     json data;
 
     // opening the file for reading
@@ -107,17 +107,16 @@ int StorageHandler::retrieveExpensesByDate(const std::string&date, int range) {
     }
 
     input_file.close();
-
-    json result = json::array();
-
+    json dateExpenses = json::array();
     if (range == 1) {
         if (data.contains(date)) {
-            result.push_back(data[date]);
+            dateExpenses.push_back(date);
+            dateExpenses.push_back(data[date]);
+            result.push_back(dateExpenses);
         } else {
             return 0; // no expenses found
         }
     } else {
-        json dateExpenses = json::array();
         for (const auto& [key, value] : data.items()) {
             if (isDateInRange(date, key, range)) {
                 dateExpenses.push_back(key);
@@ -129,8 +128,6 @@ int StorageHandler::retrieveExpensesByDate(const std::string&date, int range) {
             }
         }
     }
-
-    std::cout << result << std::endl;
 
     return 0;
 }

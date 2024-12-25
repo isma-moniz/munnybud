@@ -32,3 +32,4 @@ Doxyfile
 
 # generated files (for example, those created during the build process)
 *.generated.*
+.cache
