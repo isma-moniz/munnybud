@@ -45,11 +45,11 @@ int handleQuickInput(int argc, char* argv[]) {
     //view subcommand
     argparse::ArgumentParser view_cmd("view");
     view_cmd.add_argument("-d", "--date")
-        .help("The base date of the transactions you want to consult")
-        .required();
+        .help("The base date of the transactions you want to consult. Default is today.")
+        .default_value(getCurrentDate());
     
-    view_cmd.add_argument("r", "--range")
-        .help("The range in days of the transactions to show. 1 will show the base day only, 2 will show the next also")
+    view_cmd.add_argument("-r", "--range")
+        .help("The range in days of the transactions to show. 1 will show the base day only, 2 will show week, 3 will show month")
         .default_value(1)
         .scan<'i', int>();
 
@@ -89,7 +89,7 @@ int handleQuickInput(int argc, char* argv[]) {
         int rng = view_cmd.get<int>("--range");
         json::array_t result = json::array();
 
-        if (storageHandler.retrieveExpensesByDate(date, rng, result) < 0) {
+        if (storageHandler.retrieveExpenses(date, rng, result) < 0) {
             std::cout << "Error when retrieving expenses.\n";
             return -1;
         }

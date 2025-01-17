@@ -25,7 +25,7 @@
  *
  * @return True if the test date is within the range; false otherwise.
  */
-bool isDateInRange(const std::string &baseDate, const std::string &testDate, int range) {
+/*bool isDateInRange(const std::string &baseDate, const std::string &testDate, int range) {
     auto baseTime = parseDate(baseDate);
     auto testTime = parseDate(testDate);
 
@@ -36,33 +36,29 @@ bool isDateInRange(const std::string &baseDate, const std::string &testDate, int
 
     auto rangeDuration = std::chrono::hours(range * 24);
     return (*testTime >= *baseTime && *testTime < (*baseTime + rangeDuration));
-}
+} */
 
 /**
- * @brief Parses a date string into a `std::chrono::system_clock::time_point`.
+ * @brief Parses a date string into a 'std::chrono::year_month_day'.
  *
  * This function takes a date string in the format "YYYY-MM-DD" and converts it
- * into a `std::chrono::system_clock::time_point`. If the parsing fails, it returns
- * `std::nullopt`.
- *
- * @param dateString The date string to parse in the format "YYYY-MM-DD".
- *
- * @return An optional containing the parsed time_point if successful; std::nullopt otherwise.
+ * into a 'std::chrono::year_month_day'. If the parsing fails, it throws a runtime error.
+ * 
+ * @param dateString The date string to parse in "YYYY-MM-DD" format.
+ * @return std::chrono::year_month_day of the provided date string.
  */
-std::optional<std::chrono::system_clock::time_point> parseDate(const std::string& dateString) {
-    struct tm dateTm;
+std::chrono::year_month_day parseYMD(const std::string& dateString) {
     std::istringstream ss(dateString);
-    ss >> std::get_time(&dateTm, "%Y-%m-%d");
+    std::chrono::year_month_day ymd;
+    ss >> std::chrono::parse("%Y-%m-%d", ymd);
     if (ss.fail()) {
-        return std::nullopt;
+        throw std::runtime_error("Failed to parse date: " + dateString);
     }
+    return ymd;
+}
 
-    // Treat the date as UTC with no time offset
-    dateTm.tm_hour = 0;
-    dateTm.tm_min = 0;
-    dateTm.tm_sec = 0;
-
-    return std::chrono::system_clock::from_time_t(mktime(&dateTm));
+bool same_month(const std::chrono::year_month_day& d1, const std::chrono::year_month_day& d2) {
+    return d1.year() == d2.year() && d1.month() == d2.month();
 }
 
 /**
