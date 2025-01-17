@@ -30,11 +30,18 @@ using json = nlohmann::json;
 * 
 */
 class StorageHandler {
+private:
+    json data;
+    std::string jsonFileName;
+
+    int loadData();
+    int storeData();
 public:
+    StorageHandler(const std::string& jsonFileName);
     int storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet);
     int retrieveExpensesByDate(const std::string&date, int range, json::array_t& result);
     float retrieveBalance(const std::string& wallet);
-    int updateBalance(const std::string& wallet, float amount, json& data);
+    int updateBalance(const std::string& wallet, float amount);
 };
 
 #endif
