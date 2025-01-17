@@ -28,24 +28,25 @@ std::string jsonFileName = "../data.json";
  *
  *@return 0 on success, -1 on failure
  */
-int StorageHandler::storeExpense(float amount, const std::string& category, const std::string& description, const std::string& date) {
-
+int StorageHandler::storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet) {
+    std::cout << "Amount received in storeTransaction: " << amount << std::endl;
     // expense in json format
-    json expense = {
+    json transaction = {
+        {"date", date},
         {"amount", amount},
         {"category", category},
         {"description", description},
+        {"wallet", wallet}
     };
 
-    // open the file for writing
     std::ifstream input_file(jsonFileName);
     json data;
 
     if (input_file.is_open()) {
         try {
             data = json::parse(input_file);
-        } catch (json::parse_error e) {
-            std::cout << e.what() << std::endl;
+        } catch (json::parse_error& e) {
+            std::cout << "JSON parse error: " << e.what() << std::endl;
             return -1;
         }
         input_file.close();
@@ -58,24 +59,25 @@ int StorageHandler::storeExpense(float amount, const std::string& category, cons
         std::cerr << "Error: Root JSON structure is not an object. Resetting to empty object." << std::endl;
         data = json::object();
     }
-
-    if (!data.contains(date)) {
-        data[date] = json::array();
-    } else if (!data[date].is_array()) {
-        std::cerr << "Error: data[date] is not an array. Overwriting with a new array.\n";
-    }
-
-    try {
-        data[date].push_back(expense);
-        data["balance"] = static_cast<float>(data["balance"]) - amount;
-    } catch (json::exception e) {
-        std::cout << e.what() << std::endl;
+    
+    if (updateBalance(wallet, amount, data) != 0) {
         return -1;
     }
+    
+    if (!data.contains("transactions") || !data["transactions"].is_array()) {
+        data["transactions"] = json::array();
+    }
+
+    data["transactions"].push_back(transaction);
 
     std::ofstream output_file(jsonFileName);
-    output_file << data.dump(4); // pretty print
+    if (!output_file.is_open()) {
+        std::cerr << "Error: Could not open file for writing." << std::endl;
+        return -1;
+    }
+    output_file << std::setprecision(2) << data.dump(4);
     output_file.close();
+
     return 0;
 }
 
@@ -137,7 +139,7 @@ int StorageHandler::retrieveExpensesByDate(const std::string&date, int range, js
  *
  * @return The balance as a float
  */
-float StorageHandler::retrieveBalance() {
+float StorageHandler::retrieveBalance(const std::string& wallet) {
     json data;
 
     // opening the file for reading
@@ -154,7 +156,37 @@ float StorageHandler::retrieveBalance() {
         return -1;
     }
 
-    input_file.close();
+   if (!data.contains("wallets")) {
+       std::cerr << "Error: No valid wallets found in file.\n";
+       return -1;
+   }
 
-    return data.value("balance", 0);
+   json wallets = data["wallets"];
+
+   if (!wallets.contains(wallet)) {
+       std::cerr << "Error: Wallet " << wallet << " not found.\n";
+       return -1;
+   }
+
+   if (!wallets[wallet].is_number()) {
+       std::cerr << "Error: Invalid wallet balance.\n";
+       return -1;
+   }
+
+   return wallets[wallet].get<float>();
+}
+
+int StorageHandler::updateBalance(const std::string& wallet, float amount, json& data) {
+    if (!data.contains("wallets") || !data["wallets"].is_object()) {
+        data["wallets"] = json::object();
+    }
+
+    if (!data["wallets"].contains(wallet)) {
+        std::cerr << "Error: Wallet '" << wallet << "' does not exist. Unable to update wallet balance." << std::endl;
+        return -1;
+    }
+    std::cout << data["wallets"][wallet] << std::endl;
+    data["wallets"][wallet] = data["wallets"][wallet].get<float>() + amount;
+    std::cout << data["wallets"][wallet].get<float>() << std::endl;
+    return 0;
 }

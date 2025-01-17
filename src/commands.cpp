@@ -35,6 +35,9 @@ int handleQuickInput(int argc, char* argv[]) {
     add_cmd.add_argument("-d", "--date")
         .help("Date of the transaction")
         .default_value(getCurrentDate());
+    add_cmd.add_argument("-w", "--wallet")
+        .help("Wallet to charge expense from")
+        .default_value(std::string("default"));
 
     // 'del' subcommand
     // TODO: implement deletion
@@ -51,6 +54,9 @@ int handleQuickInput(int argc, char* argv[]) {
         .scan<'i', int>();
 
     argparse::ArgumentParser balance_cmd("balance");
+    balance_cmd.add_argument("-w", "--wallet")
+        .help("The wallet you want to consult")
+        .default_value(std::string("default"));
 
     program.add_subparser(balance_cmd);
     program.add_subparser(add_cmd);
@@ -70,11 +76,12 @@ int handleQuickInput(int argc, char* argv[]) {
         std::string category = add_cmd.get<std::string>("--category");
         std::string label = add_cmd.get<std::string>("--label");
         std::string date = add_cmd.get<std::string>("--date");
+        std::string wallet = add_cmd.get<std::string>("--wallet");
 
-        if (storageHandler.storeExpense(amount, category, label, date) < 0) {
+        if (storageHandler.storeTransaction(-amount, category, label, date, wallet) < 0) {
             return -1;
         };
-        
+        std::cout << "Amount: " << amount << std::endl;
         std::cout << "Transaction stored!\n";
 
     } else if (program.is_subcommand_used("view")) {
@@ -89,7 +96,8 @@ int handleQuickInput(int argc, char* argv[]) {
 
         printResults(result);
     } else if (program.is_subcommand_used("balance")) {
-        int balance = storageHandler.retrieveBalance();
+        std::string wallet = balance_cmd.get<std::string>("--wallet");
+        float balance = storageHandler.retrieveBalance(wallet);
         std::cout << "Your current balance: " << balance << std::endl;
     }
     return 0;
