@@ -1,17 +1,13 @@
 /**
  * @file utils.cpp
- * @author Ismael Moniz (hismamoniz@gmail.com)
- * @brief Implementation file for storage management functions that interact with the json data directly
- * @version 0.1
- * @date 2024-12-14
  * 
- * @copyright Copyright (c) 2024
+ * @brief Implementation file for storage management functions that interact with the json data directly
  * 
  */
 
-
 #include "storage.hpp"
 #include <chrono>
+
 using json = nlohmann::json;
 std::string jsonFileName = "../data.json";
 
@@ -109,6 +105,27 @@ int StorageHandler::retrieveDailyExpenses(const std::string& base_date, json::ar
 }
 
 int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, json::array_t& result) {
+    json Expenses = json::array(); 
+    std::chrono::year_month_day baseDate = parseYMD(base_date);
+    std::chrono::year_month_day startOfWeek, endOfWeek;
+
+    getWeek(baseDate, startOfWeek, endOfWeek);
+    std::cout << "Week starts at " << startOfWeek.day() << std::endl;
+    std::cout << "Week ends at " << endOfWeek.day() << std::endl;
+    
+    for (const auto& [key, value]: data["transactions"].items()) {
+        std::chrono::year_month_day currentDate = parseYMD(key);
+        std::cout << "Evaluating " << key << std::endl;
+        if (currentDate >= startOfWeek && currentDate <= endOfWeek) {
+            Expenses.clear();
+            Expenses.push_back(key);
+            for (const auto& expense : value) {
+                std::cout << expense << std::endl;
+                Expenses.push_back(expense);
+            }
+            result.push_back(Expenses);
+        }
+    }
     return 0;
 }
 
@@ -118,6 +135,7 @@ int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, json::
     for (const auto& [key, value] : data["transactions"].items()) {
             std::chrono::year_month_day currentDate = parseYMD(key);
             if (same_month(base_ymd, currentDate)) {
+                Expenses.clear();
                 Expenses.push_back(key);
                 for (const auto& expense : value) {
                     Expenses.push_back(expense);

@@ -23,6 +23,7 @@
 std::chrono::year_month_day parseYMD(const std::string& dateString);
 std::string getCurrentDate();
 bool same_month(const std::chrono::year_month_day& d1, const std::chrono::year_month_day& d2);
+void getWeek(const std::chrono::year_month_day& baseDate, std::chrono::year_month_day& firstDay, std::chrono::year_month_day& lastDay);
 
 enum daysByMonth {
     jan = 31,

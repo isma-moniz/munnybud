@@ -1,42 +1,13 @@
 /**
  * @file utils.cpp
- * @author Ismael Moniz (hismamoniz@gmail.com)
+ *
  * @brief Implementation file for utils such as date manipulation, date parsing, etc.
- * @version 0.1
- * @date 2024-12-14
- * 
- * @copyright Copyright (c) 2024
  * 
  */
 
 #include "utils.hpp"
 #include <chrono>
 #include <ctime>
-
-/**
- * @brief Checks if a given test date falls within a specified range from a base date.
- *
- * This function parses both the base and test dates, calculates the range, and determines
- * if the test date falls within the range (inclusive of the base date and exclusive of the upper bound).
- *
- * @param baseDate The base date as a string in the format "YYYY-MM-DD".
- * @param testDate The test date as a string in the format "YYYY-MM-DD".
- * @param range The number of days for the range.
- *
- * @return True if the test date is within the range; false otherwise.
- */
-/*bool isDateInRange(const std::string &baseDate, const std::string &testDate, int range) {
-    auto baseTime = parseDate(baseDate);
-    auto testTime = parseDate(testDate);
-
-    if ((!baseTime) || (!testTime)) {
-        std::cout << "isDateInRange error: invalid dates.\n";
-        return false;
-    }
-
-    auto rangeDuration = std::chrono::hours(range * 24);
-    return (*testTime >= *baseTime && *testTime < (*baseTime + rangeDuration));
-} */
 
 /**
  * @brief Parses a date string into a 'std::chrono::year_month_day'.
@@ -77,4 +48,17 @@ std::string getCurrentDate() {
     ss << std::put_time(&time_tm, "%Y-%m-%d");
 
     return ss.str();
+}
+
+void getWeek(const std::chrono::year_month_day& baseDate, std::chrono::year_month_day& firstDay, std::chrono::year_month_day& lastDay) {
+    using namespace std::chrono;
+
+    sys_days baseDays = sys_days{baseDate};
+    weekday baseWd = weekday{baseDays};
+    
+    sys_days startOfWeek = baseDays - days(baseWd.iso_encoding() -1);
+    sys_days endOfWeek = startOfWeek + days(6);
+
+    firstDay = year_month_day(startOfWeek);
+    lastDay = year_month_day(endOfWeek);
 }
