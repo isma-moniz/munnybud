@@ -20,9 +20,10 @@
 #include <optional>
 #include <string>
 
-bool isDateInRange(const std::string& baseDate, const std::string& testDate, int range);
-std::optional<std::chrono::system_clock::time_point> parseDate(const std::string& dateString);
+std::chrono::year_month_day parseYMD(const std::string& dateString);
 std::string getCurrentDate();
+bool same_month(const std::chrono::year_month_day& d1, const std::chrono::year_month_day& d2);
+void getWeek(const std::chrono::year_month_day& baseDate, std::chrono::year_month_day& firstDay, std::chrono::year_month_day& lastDay);
 
 enum daysByMonth {
     jan = 31,

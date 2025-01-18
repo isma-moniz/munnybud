@@ -1,11 +1,7 @@
 /**
  * @file utils.cpp
- * @author Ismael Moniz (hismamoniz@gmail.com)
+ *
  * @brief Implementation file for utils such as date manipulation, date parsing, etc.
- * @version 0.1
- * @date 2024-12-14
- * 
- * @copyright Copyright (c) 2024
  * 
  */
 
@@ -14,55 +10,26 @@
 #include <ctime>
 
 /**
- * @brief Checks if a given test date falls within a specified range from a base date.
- *
- * This function parses both the base and test dates, calculates the range, and determines
- * if the test date falls within the range (inclusive of the base date and exclusive of the upper bound).
- *
- * @param baseDate The base date as a string in the format "YYYY-MM-DD".
- * @param testDate The test date as a string in the format "YYYY-MM-DD".
- * @param range The number of days for the range.
- *
- * @return True if the test date is within the range; false otherwise.
- */
-bool isDateInRange(const std::string &baseDate, const std::string &testDate, int range) {
-    auto baseTime = parseDate(baseDate);
-    auto testTime = parseDate(testDate);
-
-    if ((!baseTime) || (!testTime)) {
-        std::cout << "isDateInRange error: invalid dates.\n";
-        return false;
-    }
-
-    auto rangeDuration = std::chrono::hours(range * 24);
-    return (*testTime >= *baseTime && *testTime < (*baseTime + rangeDuration));
-}
-
-/**
- * @brief Parses a date string into a `std::chrono::system_clock::time_point`.
+ * @brief Parses a date string into a 'std::chrono::year_month_day'.
  *
  * This function takes a date string in the format "YYYY-MM-DD" and converts it
- * into a `std::chrono::system_clock::time_point`. If the parsing fails, it returns
- * `std::nullopt`.
- *
- * @param dateString The date string to parse in the format "YYYY-MM-DD".
- *
- * @return An optional containing the parsed time_point if successful; std::nullopt otherwise.
+ * into a 'std::chrono::year_month_day'. If the parsing fails, it throws a runtime error.
+ * 
+ * @param dateString The date string to parse in "YYYY-MM-DD" format.
+ * @return std::chrono::year_month_day of the provided date string.
  */
-std::optional<std::chrono::system_clock::time_point> parseDate(const std::string& dateString) {
-    struct tm dateTm;
+std::chrono::year_month_day parseYMD(const std::string& dateString) {
     std::istringstream ss(dateString);
-    ss >> std::get_time(&dateTm, "%Y-%m-%d");
+    std::chrono::year_month_day ymd;
+    ss >> std::chrono::parse("%Y-%m-%d", ymd);
     if (ss.fail()) {
-        return std::nullopt;
+        throw std::runtime_error("Failed to parse date: " + dateString);
     }
+    return ymd;
+}
 
-    // Treat the date as UTC with no time offset
-    dateTm.tm_hour = 0;
-    dateTm.tm_min = 0;
-    dateTm.tm_sec = 0;
-
-    return std::chrono::system_clock::from_time_t(mktime(&dateTm));
+bool same_month(const std::chrono::year_month_day& d1, const std::chrono::year_month_day& d2) {
+    return d1.year() == d2.year() && d1.month() == d2.month();
 }
 
 /**
@@ -81,4 +48,17 @@ std::string getCurrentDate() {
     ss << std::put_time(&time_tm, "%Y-%m-%d");
 
     return ss.str();
+}
+
+void getWeek(const std::chrono::year_month_day& baseDate, std::chrono::year_month_day& firstDay, std::chrono::year_month_day& lastDay) {
+    using namespace std::chrono;
+
+    sys_days baseDays = sys_days{baseDate};
+    weekday baseWd = weekday{baseDays};
+    
+    sys_days startOfWeek = baseDays - days(baseWd.iso_encoding() -1);
+    sys_days endOfWeek = startOfWeek + days(6);
+
+    firstDay = year_month_day(startOfWeek);
+    lastDay = year_month_day(endOfWeek);
 }

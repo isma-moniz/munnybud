@@ -1,16 +1,13 @@
 /**
  * @file utils.cpp
- * @author Ismael Moniz (hismamoniz@gmail.com)
- * @brief Implementation file for storage management functions that interact with the json data directly
- * @version 0.1
- * @date 2024-12-14
  * 
- * @copyright Copyright (c) 2024
+ * @brief Implementation file for storage management functions that interact with the json data directly
  * 
  */
 
-
 #include "storage.hpp"
+#include <chrono>
+
 using json = nlohmann::json;
 std::string jsonFileName = "../data.json";
 
@@ -73,7 +70,6 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
     
     // expense in json format
     json transaction = {
-        {"date", date},
         {"amount", amount},
         {"category", category},
         {"description", description},
@@ -85,68 +81,88 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
         return -1;
     }
     
-    if (!data.contains("transactions") || !data["transactions"].is_array()) {
-        data["transactions"] = json::array();
+    if (!data.contains("transactions") || !data["transactions"].is_object()) {
+        data["transactions"] = json::object();
     }
 
-    data["transactions"].push_back(transaction);
- 
+    if(!data["transactions"].contains(date) || !data["transactions"][date].is_array())
+        data["transactions"][date] = json::array();
+    data["transactions"][date].push_back(transaction);
+
     return storeData();
 }
 
-/**
- * @brief Retrieves expenses from the JSON file within a specified date range.
- *
- * This function retrieves all expenses for a given date or within a specified range
- * of days from the base date. Prints the result as a JSON array.
- *
- * @param date The base date to retrieve expenses from (format "YYYY-MM-DD").
- * @param range The number of days to include in the range (0 for exact date).
- *
- * @return 0 on success, -1 on failure.
- */
-int StorageHandler::retrieveExpensesByDate(const std::string&date, int range, json::array_t& result) {
-    json data;
-
-    // opening the file for reading
-    std::ifstream input_file(jsonFileName);
-    if (!input_file) {
-        std::cerr << "Error: File " << jsonFileName << " could not be opened\n";
-        return -1;
-    }
-
-    try {
-        data = json::parse(input_file);
-    } catch(json::parse_error e) {
-        std::cout << e.what() << std::endl;
-        return -1;
-    }
-
-    input_file.close();
+int StorageHandler::retrieveDailyExpenses(const std::string& base_date, json::array_t& result) {
     json dateExpenses = json::array();
-    if (range == 1) {
-        if (data.contains(date)) {
-            dateExpenses.push_back(date);
-            dateExpenses.push_back(data[date]);
-            result.push_back(dateExpenses);
-        } else {
-            return 0; // no expenses found
-        }
+    if (data["transactions"].contains(base_date)) {
+        dateExpenses.push_back(base_date);
+        dateExpenses.push_back(data["transactions"][base_date]);
+        result.push_back(dateExpenses);
+        return 0;
     } else {
-        for (const auto& [key, value] : data.items()) {
-            if (isDateInRange(date, key, range)) {
-                dateExpenses.push_back(key);
-                for (const auto& expense : value) {
-                    dateExpenses.push_back(expense);
-                }
-                result.push_back(dateExpenses);
-                dateExpenses.clear();
+        return -1;
+    }
+}
+
+int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, json::array_t& result) {
+    json Expenses = json::array(); 
+    std::chrono::year_month_day baseDate = parseYMD(base_date);
+    std::chrono::year_month_day startOfWeek, endOfWeek;
+
+    getWeek(baseDate, startOfWeek, endOfWeek);
+    std::cout << "Week starts at " << startOfWeek.day() << std::endl;
+    std::cout << "Week ends at " << endOfWeek.day() << std::endl;
+    
+    for (const auto& [key, value]: data["transactions"].items()) {
+        std::chrono::year_month_day currentDate = parseYMD(key);
+        std::cout << "Evaluating " << key << std::endl;
+        if (currentDate >= startOfWeek && currentDate <= endOfWeek) {
+            Expenses.clear();
+            Expenses.push_back(key);
+            for (const auto& expense : value) {
+                std::cout << expense << std::endl;
+                Expenses.push_back(expense);
             }
+            result.push_back(Expenses);
         }
     }
-
     return 0;
 }
+
+int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, json::array_t& result) {
+    json Expenses = json::array();
+    std::chrono::year_month_day base_ymd = parseYMD(base_date);
+    for (const auto& [key, value] : data["transactions"].items()) {
+            std::chrono::year_month_day currentDate = parseYMD(key);
+            if (same_month(base_ymd, currentDate)) {
+                Expenses.clear();
+                Expenses.push_back(key);
+                for (const auto& expense : value) {
+                    Expenses.push_back(expense);
+                }
+                result.push_back(Expenses);
+            }
+        }
+    return 0;
+}
+
+int StorageHandler::retrieveExpenses(const std::string& base_date, int range, json::array_t& result) {
+    std::cout << base_date << std::endl;
+    switch(range) {
+        case 1:
+            return retrieveDailyExpenses(base_date, result);
+            break;
+        case 2:
+            return retrieveWeeklyExpenses(base_date, result);
+            break;
+        case 3:
+            return retrieveMonthlyExpenses(base_date, result);
+            break;
+        default:
+            return -1;
+    }
+}
+
 /**
  * @brief Retrieves the current balance from the JSON file
  *
