@@ -1,7 +1,6 @@
 #include "interface.hpp"
 
-void printResults(nlohmann::json::array_t &results) {
-    std::cout << results << std::endl;
+void printResults(nlohmann::json::array_t &results) { 
     for (int d = 0; d < results.size(); d++) {
         std::string date = results[d][0];
         std::cout << "Expenses made in " << date << ":\n";
