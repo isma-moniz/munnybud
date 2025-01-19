@@ -46,7 +46,7 @@ public:
     int retrieveMonthlyExpenses(const std::string& date, json::array_t& result);
 
     float retrieveBalance(const std::string& wallet);
-    int updateBalance(const std::string& wallet, float amount);
+    int updateBalance(const std::string& wallet, int amount);
 };
 
 #endif
