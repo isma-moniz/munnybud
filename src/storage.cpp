@@ -67,17 +67,17 @@ StorageHandler::StorageHandler(const std::string& fileName) : jsonFileName(fileN
  *@return 0 on success, -1 on failure
  */
 int StorageHandler::storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet) {
-    
+    float amountInCents = std::round(amount * 100); 
     // expense in json format
     json transaction = {
-        {"amount", amount},
+        {"amount", (int)amountInCents}, // convert to integer cent amount 
         {"category", category},
         {"description", description},
         {"wallet", wallet}
     };
 
         
-    if (updateBalance(wallet, amount) != 0) {
+    if (updateBalance(wallet, (int)amountInCents) != 0) {
         return -1;
     }
     
@@ -198,10 +198,10 @@ float StorageHandler::retrieveBalance(const std::string& wallet) {
        return -1;
    }
 
-   return wallets[wallet].get<float>();
+   return wallets[wallet].get<float>() / 100;
 }
 
-int StorageHandler::updateBalance(const std::string& wallet, float amount) {
+int StorageHandler::updateBalance(const std::string& wallet, int amount) {
     if (!data.contains("wallets") || !data["wallets"].is_object()) {
         data["wallets"] = json::object();
     }
@@ -211,7 +211,7 @@ int StorageHandler::updateBalance(const std::string& wallet, float amount) {
         return -1;
     }
     std::cout << data["wallets"][wallet] << std::endl;
-    data["wallets"][wallet] = data["wallets"][wallet].get<float>() + amount;
-    std::cout << data["wallets"][wallet].get<float>() << std::endl;
+    data["wallets"][wallet] = data["wallets"][wallet].get<int>() + amount;
+    std::cout << data["wallets"][wallet].get<int>() << std::endl;
     return 0;
 }
