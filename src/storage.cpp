@@ -92,58 +92,56 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
     return storeData();
 }
 
-int StorageHandler::retrieveDailyExpenses(const std::string& base_date, json::array_t& result) {
-    json dateExpenses = json::array();
+int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
     if (data["transactions"].contains(base_date)) {
-        dateExpenses.push_back(base_date);
-        dateExpenses.push_back(data["transactions"][base_date]);
-        result.push_back(dateExpenses);
+        for (auto it : data["transactions"][base_date]) {
+            Transaction transaction = Transaction::fromJson(it);
+            transaction.date = base_date;
+            result.push_back(transaction);
+        }
         return 0;
     } else {
         return -1;
     }
 }
 
-int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, json::array_t& result) {
-    json Expenses = json::array(); 
+int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::vector<Transaction>& result) { 
     std::chrono::year_month_day baseDate = parseYMD(base_date);
     std::chrono::year_month_day startOfWeek, endOfWeek;
 
-    getWeek(baseDate, startOfWeek, endOfWeek); 
+    getWeek(baseDate, startOfWeek, endOfWeek);
     
     for (const auto& [key, value]: data["transactions"].items()) {
         std::chrono::year_month_day currentDate = parseYMD(key);
         if (currentDate >= startOfWeek && currentDate <= endOfWeek) {
-            Expenses.clear();
-            Expenses.push_back(key);
             for (const auto& expense : value) {
-                Expenses.push_back(expense);
+                Transaction transaction = Transaction::fromJson(expense);
+                transaction.date = key;
+                result.push_back(transaction);
             }
-            result.push_back(Expenses);
         }
     }
+    if (empty(result)) return -1;
     return 0;
 }
 
-int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, json::array_t& result) {
-    json Expenses = json::array();
+int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
     std::chrono::year_month_day base_ymd = parseYMD(base_date);
     for (const auto& [key, value] : data["transactions"].items()) {
             std::chrono::year_month_day currentDate = parseYMD(key);
             if (same_month(base_ymd, currentDate)) {
-                Expenses.clear();
-                Expenses.push_back(key);
                 for (const auto& expense : value) {
-                    Expenses.push_back(expense);
+                    Transaction transaction = Transaction::fromJson(expense);
+                    transaction.date = key;
+                    result.push_back(transaction);
                 }
-                result.push_back(Expenses);
             }
         }
+    if (empty(result)) return -1;
     return 0;
 }
 
-int StorageHandler::retrieveExpenses(const std::string& base_date, int range, json::array_t& result) {
-    std::cout << base_date << std::endl;
+int StorageHandler::retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result) { 
     switch(range) {
         case 1:
             return retrieveDailyExpenses(base_date, result);

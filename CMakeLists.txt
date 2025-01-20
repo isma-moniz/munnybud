@@ -3,4 +3,4 @@ project(munnybud)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(munnybud src/main.cpp src/commands.cpp src/expense.cpp src/interface.cpp src/income.cpp src/manager.cpp src/storage.cpp src/utils.cpp)
+add_executable(munnybud src/main.cpp src/commands.cpp src/transaction.cpp src/interface.cpp src/income.cpp src/manager.cpp src/storage.cpp src/utils.cpp)

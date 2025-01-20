@@ -1,11 +1,14 @@
 #ifndef INTERFACE_HPP
 #define INTERFACE_HPP
 
+#include "transaction.hpp"
+
 #include "json.hpp"
-#include "iostream"
+#include <iostream>
+#include <vector>
 
 int runInterface();
 
-void printResults(nlohmann::json::array_t& results);
+void printResults(std::vector<Transaction>& results);
 
 #endif

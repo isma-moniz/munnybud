@@ -10,11 +10,12 @@ class Transaction {
 public:
     int amount;
     std::string category;
-    std::string label;
+    std::string description;
     std::string wallet;
+    std::string date;
     // consider adding a date as well
 
-    Transaction(int amt, const std::string& cat, const std::string& lbl, const std::string& wlt);
+    Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt);
     static Transaction fromJson(const json& transactionObject);
     json toJson() const;
 };

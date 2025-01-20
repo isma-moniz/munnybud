@@ -87,10 +87,10 @@ int handleQuickInput(int argc, char* argv[]) {
     } else if (program.is_subcommand_used("view")) {
         std::string date = view_cmd.get<std::string>("--date");
         int rng = view_cmd.get<int>("--range");
-        json::array_t result = json::array();
+        std::vector<Transaction> result;
 
         if (storageHandler.retrieveExpenses(date, rng, result) < 0) {
-            std::cout << "Error when retrieving expenses.\n";
+            std::cout << "No expenses made in specified range.\n";
             return -1;
         }
 

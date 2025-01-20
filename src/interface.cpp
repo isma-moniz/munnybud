@@ -1,11 +1,11 @@
 #include "interface.hpp"
 
-void printResults(nlohmann::json::array_t &results) { 
-    for (int d = 0; d < results.size(); d++) {
-        std::string date = results[d][0];
-        std::cout << "Expenses made in " << date << ":\n";
-        for (int i = 1; i < results[d].size(); i++) {
-            std::cout << results[d][i] << std::endl;
-        }
+void printResults(std::vector<Transaction>& results) { 
+    for (Transaction& transaction : results) {
+        std::cout << "Date: " << transaction.date << std::endl;
+        std::cout << "Amount: " << transaction.amount << std::endl;
+        std::cout << "Category: " << transaction.category << std::endl;
+        std::cout << "Description: " << transaction.description << std::endl;
+        std::cout << "Wallet: " << transaction.wallet << std::endl;
     }
 }

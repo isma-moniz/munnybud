@@ -13,6 +13,7 @@
 #define STORAGE_HPP
 
 #include "utils.hpp"
+#include "transaction.hpp"
 
 #include <string>
 #include <stdio.h>
@@ -40,10 +41,10 @@ public:
     StorageHandler(const std::string& jsonFileName);
     int storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet);
     
-    int retrieveExpenses(const std::string& base_date, int range, json::array_t& result);
-    int retrieveDailyExpenses(const std::string& date, json::array_t& result);
-    int retrieveWeeklyExpenses(const std::string& date, json::array_t& result);
-    int retrieveMonthlyExpenses(const std::string& date, json::array_t& result);
+    int retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result);
+    int retrieveDailyExpenses(const std::string& date, std::vector<Transaction>& result);
+    int retrieveWeeklyExpenses(const std::string& date, std::vector<Transaction>& result);
+    int retrieveMonthlyExpenses(const std::string& date, std::vector<Transaction>& result);
 
     float retrieveBalance(const std::string& wallet);
     int updateBalance(const std::string& wallet, int amount);
