@@ -77,10 +77,14 @@ int handleQuickInput(int argc, char* argv[]) {
         std::string label = add_cmd.get<std::string>("--label");
         std::string date = add_cmd.get<std::string>("--date");
         std::string wallet = add_cmd.get<std::string>("--wallet");
+        if (transaction == "expense") {
+            if (storageHandler.storeTransaction(-amount, category, label, date, wallet) < 0)
+                return -1;
+        } else {
+            if (storageHandler.storeTransaction(amount, category, label, date, wallet) < 0)
+                return -1;
+        }
 
-        if (storageHandler.storeTransaction(-amount, category, label, date, wallet) < 0) {
-            return -1;
-        };
         std::cout << "Amount: " << amount << std::endl;
         std::cout << "Transaction stored!\n";
 
