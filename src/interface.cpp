@@ -21,10 +21,11 @@ void printResults(std::vector<Transaction>& results, const std::vector<std::stri
 }
 
 void printGroupedByDate(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
-    std::cout << "Expenses grouped by date: " << std::endl;
+    std::cout << "Expenses grouped by date: " << std::endl << std::endl;
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Date: " << key << std::endl << std::endl;
         for (const auto& transaction : transactions) {
+            std::cout << "ID: " << transaction.id << std::endl;
             std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction.amount / 100.0 << std::endl;
             std::cout << "Category: " << transaction.category << std::endl;
             std::cout << "Description: " << transaction.description << std::endl;
@@ -39,6 +40,7 @@ void printGroupedByCategory(const std::unordered_map<std::string, std::vector<Tr
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Category: " << key << std::endl << std::endl;
         for (const auto& transaction : transactions) {
+            std::cout << "ID: " << transaction.id << std::endl;
             std::cout << "Date: " << transaction.date << std::endl;
             std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction.amount / 100.0 << std::endl;
             std::cout << "Description: " << transaction.description << std::endl;
@@ -53,6 +55,7 @@ void printGroupedByWallet(const std::unordered_map<std::string, std::vector<Tran
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Wallet: " << key << std::endl << std::endl;
         for (const auto& transaction : transactions) {
+            std::cout << "ID: " << transaction.id << std::endl;
             std::cout << "Date: " << transaction.date << std::endl;
             std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction.amount / 100.0 << std::endl;
             std::cout << "Description: " << transaction.description << std::endl;
