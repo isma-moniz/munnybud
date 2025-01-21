@@ -53,15 +53,13 @@ int handleQuickInput(int argc, char* argv[]) {
         .default_value(1)
         .scan<'i', int>();
 
-    view_cmd.add_argument("-f", "--filter")
-        .help("Use this to filter by category or wallet")
-        .default_value(std::string("none"))
-        .action([](const std::string& filter) {
-            if (filter != "category" && filter != "wallet" && filter != "none") {
-                throw std::runtime_error("Invalid filter: must be 'category' or 'wallet'");
-            }
-            return filter;
-        });
+    view_cmd.add_argument("-c", "--category")
+        .help("Use this to filter results by a certain category.")
+        .default_value(std::string("no"));
+
+    view_cmd.add_argument("-w", "--wallet")
+        .help("Use this to filter results by a certain wallet")
+        .default_value(std::string("no"));
 
     view_cmd.add_argument("-g", "--group")
         .help("Use this to group the results. They are grouped by date by default, but you can also group by category or wallet")
@@ -111,16 +109,18 @@ int handleQuickInput(int argc, char* argv[]) {
     } else if (program.is_subcommand_used("view")) {
         std::string date = view_cmd.get<std::string>("--date");
         int rng = view_cmd.get<int>("--range");
-        std::string filter = view_cmd.get<std::string>("--filter");
+        std::string wallet = view_cmd.get<std::string>("--wallet");
+        std::string category = view_cmd.get<std::string>("--category");
         std::string groupBy = view_cmd.get<std::string>("--group");
         std::vector<Transaction> result;
+        std::vector<std::string> filters{wallet, category};
 
         if (storageHandler.retrieveExpenses(date, rng, result) < 0) {
             std::cout << "No expenses made in specified range.\n";
             return -1;
         }
 
-        printResults(result, filter, groupBy);
+        printResults(result, filters, groupBy);
     } else if (program.is_subcommand_used("balance")) {
         std::string wallet = balance_cmd.get<std::string>("--wallet");
         float balance = storageHandler.retrieveBalance(wallet);

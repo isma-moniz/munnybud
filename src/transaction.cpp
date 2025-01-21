@@ -22,15 +22,26 @@ json Transaction::toJson() const {
     };
 }
 
-std::vector<Transaction> Transaction::filter(const std::vector<Transaction>& transactions, const std::function<bool(const Transaction&)>& predicate) {
+void Transaction::filter(std::vector<Transaction>& transactions, const std::function<bool(const Transaction&)>& predicate) {
     std::vector<Transaction> result;
 
     for (const auto& transaction : transactions) {
         if (predicate(transaction))
             result.push_back(transaction);
     }
+    transactions = result;
+}
 
-    return result;
+void Transaction::filterByCategory(std::vector<Transaction>& transactions, const std::string& category) {
+    Transaction::filter(transactions, [category](const Transaction& transaction){
+            return transaction.category == category;
+    });
+}
+
+void Transaction::filterByWallet(std::vector<Transaction>& transactions, const std::string& wallet) {
+    Transaction::filter(transactions, [wallet](const Transaction& transaction){
+            return transaction.wallet == wallet;
+    });
 }
 
 std::unordered_map<std::string, std::vector<Transaction>> Transaction::groupBy(const std::vector<Transaction>& transactions, const std::string& property) {
