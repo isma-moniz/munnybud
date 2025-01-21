@@ -29,7 +29,10 @@ int StorageHandler::loadData() {
     if (!data.is_object()) {
         std::cerr << "Error: Root JSON structure is not an object. Resetting to empty object." << std::endl;
         data = json::object();
+        // TODO perform initial setup on this object
     }
+
+    Transaction::currentID = data["currentID"];
 
     return 0;
 }
@@ -70,14 +73,15 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
     float amountInCents = std::round(amount * 100); 
     // expense in json format
     json transaction = {
+        {"id", ++Transaction::currentID},
         {"amount", (int)amountInCents}, // convert to integer cent amount 
         {"category", category},
         {"description", description},
         {"wallet", wallet}
     };
-
-        
+ 
     if (updateBalance(wallet, (int)amountInCents) != 0) {
+        Transaction::currentID--;
         return -1;
     }
     
@@ -88,7 +92,7 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
     if(!data["transactions"].contains(date) || !data["transactions"][date].is_array())
         data["transactions"][date] = json::array();
     data["transactions"][date].push_back(transaction);
-
+    data["currentID"] = Transaction::currentID;
     return storeData();
 }
 
