@@ -53,6 +53,26 @@ int handleQuickInput(int argc, char* argv[]) {
         .default_value(1)
         .scan<'i', int>();
 
+    view_cmd.add_argument("-f", "--filter")
+        .help("Use this to filter by category or wallet")
+        .default_value(std::string("none"))
+        .action([](const std::string& filter) {
+            if (filter != "category" && filter != "wallet" && filter != "none") {
+                throw std::runtime_error("Invalid filter: must be 'category' or 'wallet'");
+            }
+            return filter;
+        });
+
+    view_cmd.add_argument("-g", "--group")
+        .help("Use this to group the results. They are grouped by date by default, but you can also group by category or wallet")
+        .default_value(std::string("date"))
+        .action([](const std::string& groupBy) {
+                if (groupBy != "date" && groupBy != "category" && groupBy != "wallet") {
+                    throw std::invalid_argument("Invalid groupBy: must be 'date', 'wallet' or 'category'");
+                }
+                return groupBy;
+        });
+
     argparse::ArgumentParser balance_cmd("balance");
     balance_cmd.add_argument("-w", "--wallet")
         .help("The wallet you want to consult")
@@ -91,6 +111,8 @@ int handleQuickInput(int argc, char* argv[]) {
     } else if (program.is_subcommand_used("view")) {
         std::string date = view_cmd.get<std::string>("--date");
         int rng = view_cmd.get<int>("--range");
+        std::string filter = view_cmd.get<std::string>("--filter");
+        std::string groupBy = view_cmd.get<std::string>("--group");
         std::vector<Transaction> result;
 
         if (storageHandler.retrieveExpenses(date, rng, result) < 0) {
@@ -98,7 +120,7 @@ int handleQuickInput(int argc, char* argv[]) {
             return -1;
         }
 
-        printResults(result);
+        printResults(result, filter, groupBy);
     } else if (program.is_subcommand_used("balance")) {
         std::string wallet = balance_cmd.get<std::string>("--wallet");
         float balance = storageHandler.retrieveBalance(wallet);
