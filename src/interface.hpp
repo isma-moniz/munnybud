@@ -6,9 +6,10 @@
 #include "json.hpp"
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 int runInterface();
 
-void printResults(std::vector<Transaction>& results);
+void printResults(const std::vector<Transaction>& results, const std::string& filter="date");
 
 #endif
