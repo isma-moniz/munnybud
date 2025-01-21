@@ -22,8 +22,10 @@ public:
     static Transaction fromJson(const json& transactionObject);
     json toJson() const;
 
-    static std::vector<Transaction> filter(const std::vector<Transaction>& transactions, const std::function<bool(const Transaction&)>& predicate);
+    static void filterByCategory(std::vector<Transaction>& transactions, const std::string& category);
+    static void filterByWallet(std::vector<Transaction>& transactions, const std::string& wallet);
     static std::unordered_map<std::string, std::vector<Transaction>> groupBy(const std::vector<Transaction>& transactions, const std::string& property);
-
+private:
+    static void filter(std::vector<Transaction>& transactions, const std::function<bool(const Transaction&)>& predicate);
 };
 #endif
