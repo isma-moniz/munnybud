@@ -4,9 +4,9 @@
  * @brief Header file for storage management functions that interact with the json data directly
  * @version 0.1
  * @date 2024-12-14
- * 
+ *
  * @copyright Copyright (c) 2024
- * 
+ *
  */
 
 #ifndef STORAGE_HPP
@@ -28,7 +28,7 @@ using json = nlohmann::json;
 /**
 * @class
 * @brief Storage Handler class
-* 
+*
 */
 class StorageHandler {
 private:
@@ -40,7 +40,7 @@ private:
 public:
     StorageHandler(const std::string& jsonFileName);
     int storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet);
-    
+    int deleteTransaction(int id);
     int retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result);
     int retrieveDailyExpenses(const std::string& date, std::vector<Transaction>& result);
     int retrieveWeeklyExpenses(const std::string& date, std::vector<Transaction>& result);

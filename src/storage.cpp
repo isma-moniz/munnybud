@@ -1,12 +1,13 @@
 /**
  * @file utils.cpp
- * 
+ *
  * @brief Implementation file for storage management functions that interact with the json data directly
- * 
+ *
  */
 
 #include "storage.hpp"
 #include <chrono>
+#include <iterator>
 
 using json = nlohmann::json;
 std::string jsonFileName = "../data.json";
@@ -70,21 +71,21 @@ StorageHandler::StorageHandler(const std::string& fileName) : jsonFileName(fileN
  *@return 0 on success, -1 on failure
  */
 int StorageHandler::storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet) {
-    float amountInCents = std::round(amount * 100); 
+    float amountInCents = std::round(amount * 100);
     // expense in json format
     json transaction = {
         {"id", ++Transaction::currentID},
-        {"amount", (int)amountInCents}, // convert to integer cent amount 
+        {"amount", (int)amountInCents}, // convert to integer cent amount
         {"category", category},
         {"description", description},
         {"wallet", wallet}
     };
- 
+
     if (updateBalance(wallet, (int)amountInCents) != 0) {
         Transaction::currentID--;
         return -1;
     }
-    
+
     if (!data.contains("transactions") || !data["transactions"].is_object()) {
         data["transactions"] = json::object();
     }
@@ -109,12 +110,12 @@ int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vec
     }
 }
 
-int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::vector<Transaction>& result) { 
+int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
     std::chrono::year_month_day baseDate = parseYMD(base_date);
     std::chrono::year_month_day startOfWeek, endOfWeek;
 
     getWeek(baseDate, startOfWeek, endOfWeek);
-    
+
     for (const auto& [key, value]: data["transactions"].items()) {
         std::chrono::year_month_day currentDate = parseYMD(key);
         if (currentDate >= startOfWeek && currentDate <= endOfWeek) {
@@ -145,7 +146,7 @@ int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, std::v
     return 0;
 }
 
-int StorageHandler::retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result) { 
+int StorageHandler::retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result) {
     switch(range) {
         case 1:
             return retrieveDailyExpenses(base_date, result);
@@ -159,6 +160,24 @@ int StorageHandler::retrieveExpenses(const std::string& base_date, int range, st
         default:
             return -1;
     }
+}
+
+int StorageHandler::deleteTransaction(int id) {
+    for (auto& [key, values] : data["transactions"].items()) {
+        for (json::iterator i = values.begin(); i != values.end(); i++) {
+            if ((*i)["id"] == id) {
+                if (updateBalance((*i)["wallet"], -1 * (int)(*i)["amount"]) != 0) {
+                    std::cerr << "Error in transaction deletion: Could not update balance." << std::endl;
+                    return -1;
+                }
+                values.erase(i);
+                storeData();
+                return 0;
+            }
+        }
+    }
+    std::cerr << "Error in transaction deletion: Transaction not found." << std::endl;
+    return -1;
 }
 
 /**

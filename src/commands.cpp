@@ -8,7 +8,7 @@ int handleQuickInput(int argc, char* argv[]) {
     StorageHandler storageHandler("../data.json");
 
     argparse::ArgumentParser program("munnybud");
-    
+
     // 'add' subcommand
     argparse::ArgumentParser add_cmd("add");
     add_cmd.add_argument("transaction")
@@ -19,7 +19,7 @@ int handleQuickInput(int argc, char* argv[]) {
             }
             return op;
         });
-    
+
     add_cmd.add_argument("amount")
         .help("Amount of money earned or spent")
         .scan<'g', float>();
@@ -27,7 +27,7 @@ int handleQuickInput(int argc, char* argv[]) {
     add_cmd.add_argument("-l", "--label")
         .help("Brief description/label for the expense")
         .required();
-    
+
     add_cmd.add_argument("-c", "--category")
         .help("Expense category")
         .default_value(std::string("default"));
@@ -39,15 +39,18 @@ int handleQuickInput(int argc, char* argv[]) {
         .help("Wallet to charge expense from")
         .default_value(std::string("default"));
 
-    // 'del' subcommand
-    // TODO: implement deletion
-    
+    argparse::ArgumentParser del_cmd("delete");
+
+    del_cmd.add_argument("id")
+        .help("ID of the transaction to delete")
+        .scan<'i', int>();
+
     //view subcommand
     argparse::ArgumentParser view_cmd("view");
     view_cmd.add_argument("-d", "--date")
         .help("The base date of the transactions you want to consult. Default is today.")
         .default_value(getCurrentDate());
-    
+
     view_cmd.add_argument("-r", "--range")
         .help("The range in days of the transactions to show. 1 will show the base day only, 2 will show week, 3 will show month")
         .default_value(1)
@@ -79,6 +82,7 @@ int handleQuickInput(int argc, char* argv[]) {
     program.add_subparser(balance_cmd);
     program.add_subparser(add_cmd);
     program.add_subparser(view_cmd);
+    program.add_subparser(del_cmd);
 
     try {
         program.parse_args(argc, argv);
@@ -125,6 +129,11 @@ int handleQuickInput(int argc, char* argv[]) {
         std::string wallet = balance_cmd.get<std::string>("--wallet");
         float balance = storageHandler.retrieveBalance(wallet);
         std::cout << "Your current balance: " << balance << std::endl;
+    } else if (program.is_subcommand_used("delete")) {
+        int id = del_cmd.get<int>("id");
+        if (storageHandler.deleteTransaction(id) < 0) {
+            return -1;
+        }
     }
     return 0;
 }
