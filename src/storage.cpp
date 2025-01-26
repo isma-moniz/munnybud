@@ -9,51 +9,51 @@
 #include <chrono>
 #include <iterator>
 
-using json = nlohmann::json;
-std::string jsonFileName = "../data.json";
+std::string transactionFilePath = "../transactions.json";
+std::string walletsFilePath = "../wallets.json";
 
-int StorageHandler::loadData() {
-    std::ifstream input_file(jsonFileName);
-    if (input_file.is_open()) {
+json StorageHandler::loadFile(const std::string& filePath) {
+    std::ifstream file(filePath);
+    json data;
+    if (file.is_open()) {
         try {
-            data = json::parse(input_file);
+            data = json::parse(file);
         } catch (json::parse_error& e) {
             std::cout << "JSON parse error: " << e.what() << std::endl;
-            return -1;
+            throw std::runtime_error("JSON Parse Error");
         }
-        input_file.close();
+        file.close();
     } else {
-        // initialize an empty json object if the file does not exist
         json data = json::object();
     }
 
-    if (!data.is_object()) {
-        std::cerr << "Error: Root JSON structure is not an object. Resetting to empty object." << std::endl;
-        data = json::object();
-        // TODO perform initial setup on this object
+    return data;
+}
+
+void StorageHandler::loadData() { 
+    wallets = loadFile(walletFile);
+    transactions = loadFile(transactionFile);
+    if (!transactions.contains("metadata") || !transactions["metadata"].contains("currentID")) throw std::runtime_error("Transaction metadata invalid.");
+    Transaction::currentID = transactions["metadata"]["currentID"];
+}
+
+int StorageHandler::storeFile(const std::string& filePath, json& data) {
+    std::ofstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file for writing." << std::endl;
+        return -1;
     }
-
-    Transaction::currentID = data["currentID"];
-
+    file << std::setprecision(2) << data.dump(4);
+    file.close();
     return 0;
 }
 
 int StorageHandler::storeData() {
-    std::ofstream output_file(jsonFileName);
-    if (!output_file.is_open()) {
-        std::cerr << "Error: Could not open file for writing." << std::endl;
-        return -1;
-    }
-    output_file << std::setprecision(2) << data.dump(4);
-    output_file.close();
-    return 0;
+    return (storeFile(walletFile, wallets) + storeFile(transactionFile, transactions)) == 1;
 }
 
-StorageHandler::StorageHandler(const std::string& fileName) : jsonFileName(fileName) {
-    if (loadData() != 0) {
-        std::cerr << "Failed to load JSON data from '" << fileName << "'.\n";
-        data = json::object();
-    }
+StorageHandler::StorageHandler(const std::string& _walletFile, const std::string& _transactionFile) : walletFile(_walletFile), transactionFile(_transactionFile) {
+    loadData(); 
 }
 
 /**
@@ -86,20 +86,20 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
         return -1;
     }
 
-    if (!data.contains("transactions") || !data["transactions"].is_object()) {
-        data["transactions"] = json::object();
+    if (!transactions.contains("data") || !transactions["data"].is_object()) {
+        transactions["data"] = json::object();
     }
 
-    if(!data["transactions"].contains(date) || !data["transactions"][date].is_array())
-        data["transactions"][date] = json::array();
-    data["transactions"][date].push_back(transaction);
-    data["currentID"] = Transaction::currentID;
+    if(!transactions["data"].contains(date) || !transactions["data"][date].is_array())
+        transactions["data"][date] = json::array();
+    transactions["data"][date].push_back(transaction);
+    transactions["metadata"]["currentID"] = Transaction::currentID;
     return storeData();
 }
 
 int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
-    if (data["transactions"].contains(base_date)) {
-        for (auto it : data["transactions"][base_date]) {
+    if (transactions["data"].contains(base_date)) {
+        for (auto it : transactions["data"][base_date]) {
             Transaction transaction = Transaction::fromJson(it);
             transaction.date = base_date;
             result.push_back(transaction);
@@ -116,7 +116,7 @@ int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::ve
 
     getWeek(baseDate, startOfWeek, endOfWeek);
 
-    for (const auto& [key, value]: data["transactions"].items()) {
+    for (const auto& [key, value]: transactions["data"].items()) {
         std::chrono::year_month_day currentDate = parseYMD(key);
         if (currentDate >= startOfWeek && currentDate <= endOfWeek) {
             for (const auto& expense : value) {
@@ -132,7 +132,7 @@ int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::ve
 
 int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
     std::chrono::year_month_day base_ymd = parseYMD(base_date);
-    for (const auto& [key, value] : data["transactions"].items()) {
+    for (const auto& [key, value] : transactions["data"].items()) {
             std::chrono::year_month_day currentDate = parseYMD(key);
             if (same_month(base_ymd, currentDate)) {
                 for (const auto& expense : value) {
@@ -163,7 +163,7 @@ int StorageHandler::retrieveExpenses(const std::string& base_date, int range, st
 }
 
 int StorageHandler::deleteTransaction(int id) {
-    for (auto& [key, values] : data["transactions"].items()) {
+    for (auto& [key, values] : transactions["data"].items()) {
         for (json::iterator i = values.begin(); i != values.end(); i++) {
             if ((*i)["id"] == id) {
                 if (updateBalance((*i)["wallet"], -1 * (int)(*i)["amount"]) != 0) {
@@ -186,29 +186,6 @@ int StorageHandler::deleteTransaction(int id) {
  * @return The balance as a float
  */
 float StorageHandler::retrieveBalance(const std::string& wallet) {
-    json data;
-
-    // opening the file for reading
-    std::ifstream input_file(jsonFileName);
-    if (!input_file) {
-        std::cerr << "Error: File " << jsonFileName << " could not be opened\n";
-        return -1;
-    }
-
-    try {
-        data = json::parse(input_file);
-    } catch(json::parse_error e) {
-        std::cout << e.what() << std::endl;
-        return -1;
-    }
-
-   if (!data.contains("wallets")) {
-       std::cerr << "Error: No valid wallets found in file.\n";
-       return -1;
-   }
-
-   json wallets = data["wallets"];
-
    if (!wallets.contains(wallet)) {
        std::cerr << "Error: Wallet " << wallet << " not found.\n";
        return -1;
@@ -223,16 +200,13 @@ float StorageHandler::retrieveBalance(const std::string& wallet) {
 }
 
 int StorageHandler::updateBalance(const std::string& wallet, int amount) {
-    if (!data.contains("wallets") || !data["wallets"].is_object()) {
-        data["wallets"] = json::object();
-    }
-
-    if (!data["wallets"].contains(wallet)) {
+    if (!wallets.contains(wallet)) {
         std::cerr << "Error: Wallet '" << wallet << "' does not exist. Unable to update wallet balance." << std::endl;
         return -1;
-    }
-    std::cout << data["wallets"][wallet] << std::endl;
-    data["wallets"][wallet] = data["wallets"][wallet].get<int>() + amount;
-    std::cout << data["wallets"][wallet].get<int>() << std::endl;
+
+    } 
+    std::cout << wallets[wallet] << std::endl;
+    wallets[wallet] = wallets[wallet].get<int>() + amount;
+    std::cout << wallets[wallet].get<int>() << std::endl;
     return 0;
 }

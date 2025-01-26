@@ -5,7 +5,7 @@
 #include <ostream>
 
 int handleQuickInput(int argc, char* argv[]) {
-    StorageHandler storageHandler("../data.json");
+    StorageHandler storageHandler("../wallets.json", "../transactions.json");
 
     argparse::ArgumentParser program("munnybud");
 

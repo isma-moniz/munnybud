@@ -2,7 +2,7 @@
 build/
 
 # personal stuff
-data.json
+*.json
 
 # documentation
 doc/
