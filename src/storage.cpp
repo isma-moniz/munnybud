@@ -68,8 +68,10 @@ int StorageHandler::setupWallets(const std::string& walletFile) {
         std::cin.ignore(std::numeric_limits<std::streamsize>::max());
         std::cout << "Invalid amount. Please enter a number: ";
     }
-    
-    data[walletName] = static_cast<int>(std::round(walletMoney * 100));
+
+    data["default_wallet"] = walletName; 
+    data["wallets"] = json::object();
+    data["wallets"][walletName] = static_cast<int>(std::round(walletMoney * 100));
 
     file << data.dump(4);
     if (!file) {
@@ -104,6 +106,7 @@ void StorageHandler::loadData() {
     transactions = loadFile(transactionFile);
     if (!transactions.contains("metadata") || !transactions["metadata"].contains("currentID")) throw std::runtime_error("Transaction metadata invalid.");
     Transaction::currentID = transactions["metadata"]["currentID"];
+    StorageHandler::default_wallet = wallets["default_wallet"];
 }
 
 int StorageHandler::storeFile(const std::string& filePath, json& data) {
@@ -140,6 +143,10 @@ StorageHandler::StorageHandler(const std::string& _walletFile, const std::string
  *@return 0 on success, -1 on failure
  */
 int StorageHandler::storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet) {
+    std::string wlt;
+    if (wallet == "default")
+        wlt = StorageHandler::default_wallet;
+    else wlt = wallet;
     float amountInCents = std::round(amount * 100);
     // expense in json format
     json transaction = {
@@ -147,10 +154,10 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
         {"amount", static_cast<int>(amountInCents)}, // convert to integer cent amount
         {"category", category},
         {"description", description},
-        {"wallet", wallet}
+        {"wallet", wlt}
     };
 
-    if (updateBalance(wallet, static_cast<int>(amountInCents)) != 0) {
+    if (updateBalance(wlt, static_cast<int>(amountInCents)) != 0) {
         Transaction::currentID--;
         return -1;
     }
@@ -255,27 +262,27 @@ int StorageHandler::deleteTransaction(int id) {
  * @return The balance as a float
  */
 float StorageHandler::retrieveBalance(const std::string& wallet) {
-   if (!wallets.contains(wallet)) {
+   if (!wallets["wallets"].contains(wallet)) {
        std::cerr << "Error: Wallet " << wallet << " not found.\n";
        return -1;
    }
 
-   if (!wallets[wallet].is_number()) {
+   if (!wallets["wallets"][wallet].is_number()) {
        std::cerr << "Error: Invalid wallet balance.\n";
        return -1;
    }
 
-   return wallets[wallet].get<float>() / 100;
+   return wallets["wallets"][wallet].get<float>() / 100;
 }
 
 int StorageHandler::updateBalance(const std::string& wallet, int amount) {
-    if (!wallets.contains(wallet)) {
+    if (!wallets["wallets"].contains(wallet)) {
         std::cerr << "Error: Wallet '" << wallet << "' does not exist. Unable to update wallet balance." << std::endl;
         return -1;
 
     } 
-    std::cout << wallets[wallet] << std::endl;
-    wallets[wallet] = wallets[wallet].get<int>() + amount;
-    std::cout << wallets[wallet].get<int>() << std::endl;
+    std::cout << wallets["wallets"][wallet] << std::endl;
+    wallets["wallets"][wallet] = wallets["wallets"][wallet].get<int>() + amount;
+    std::cout << wallets["wallets"][wallet].get<int>() << std::endl;
     return 0;
 }

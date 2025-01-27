@@ -35,13 +35,14 @@ private:
     json transactions;
     json wallets;
     std::string walletFile;
-    std::string transactionFile;
+    std::string transactionFile; 
+    static std::string default_wallet;
 
     void loadData();
     json loadFile(const std::string& filePath);
     int storeData();
     int storeFile(const std::string& filePath, json& data);
-public:
+public: 
     static int setupWallets(const std::string& walletFile);
     static int setupTransactions(const std::string& transactionFile);
     StorageHandler(const std::string& walletFile, const std::string& transactionFile);
