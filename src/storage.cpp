@@ -7,10 +7,79 @@
 
 #include "storage.hpp"
 #include <chrono>
+#include <regex>
 #include <iterator>
 
 std::string transactionFilePath = "../transactions.json";
 std::string walletsFilePath = "../wallets.json";
+
+int StorageHandler::setupTransactions(const std::string& transactionFile) {
+    std::ofstream file(transactionFile);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file for writing: " << transactionFile << " ." << std::endl;
+        return -1;
+    }
+
+    json data = {
+        {"metadata", { { "currentID", 0 } }},
+        {"data", json::object()}
+    };
+    
+    file << data.dump(4);
+    if (!file) {
+        std::cerr << "Error writing to file: " << transactionFile << std::endl;
+        return -1;
+    }
+    
+    file.close();
+    return 0;
+}
+
+int StorageHandler::setupWallets(const std::string& walletFile) {
+    std::ofstream file(walletFile);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file for writing: " << walletFile << " ." << std::endl;
+        return -1;
+    }
+
+    json data = json::object();
+    float walletMoney;
+    std::string walletName;
+    
+    while (true) {
+        std::cout << "Enter name of default wallet (leave empty for 'default'): ";
+        std::getline(std::cin, walletName);
+        if (walletName.empty()) {
+            walletName = "default";
+            break;
+        }
+
+        std::regex alphaNum("^[a-zA-Z0-9]+$");
+        if (std::regex_match(walletName, alphaNum)) {
+            break;
+        } else {
+            std::cout << "Invalid wallet name. Must only contain alphanumeric characters.\n";
+        }
+    }
+
+    std::cout << "Enter amount of money in default wallet: ";
+    while (!(std::cin >> walletMoney)) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max());
+        std::cout << "Invalid amount. Please enter a number: ";
+    }
+    
+    data[walletName] = static_cast<int>(std::round(walletMoney * 100));
+
+    file << data.dump(4);
+    if (!file) {
+        std::cerr << "Error writing to file: " << walletFile << std::endl;
+        return -1;
+    }
+
+    file.close();
+    return 0;
+}
 
 json StorageHandler::loadFile(const std::string& filePath) {
     std::ifstream file(filePath);
@@ -75,13 +144,13 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
     // expense in json format
     json transaction = {
         {"id", ++Transaction::currentID},
-        {"amount", (int)amountInCents}, // convert to integer cent amount
+        {"amount", static_cast<int>(amountInCents)}, // convert to integer cent amount
         {"category", category},
         {"description", description},
         {"wallet", wallet}
     };
 
-    if (updateBalance(wallet, (int)amountInCents) != 0) {
+    if (updateBalance(wallet, static_cast<int>(amountInCents)) != 0) {
         Transaction::currentID--;
         return -1;
     }
@@ -166,7 +235,7 @@ int StorageHandler::deleteTransaction(int id) {
     for (auto& [key, values] : transactions["data"].items()) {
         for (json::iterator i = values.begin(); i != values.end(); i++) {
             if ((*i)["id"] == id) {
-                if (updateBalance((*i)["wallet"], -1 * (int)(*i)["amount"]) != 0) {
+                if (updateBalance((*i)["wallet"], -1 * static_cast<int>((*i)["amount"])) != 0) {
                     std::cerr << "Error in transaction deletion: Could not update balance." << std::endl;
                     return -1;
                 }

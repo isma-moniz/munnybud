@@ -5,9 +5,10 @@
 #include <ostream>
 
 int handleQuickInput(int argc, char* argv[]) {
-    StorageHandler storageHandler("../wallets.json", "../transactions.json");
-
     argparse::ArgumentParser program("munnybud");
+
+    // 'setup' subcommand
+    argparse::ArgumentParser stp_cmd("setup");
 
     // 'add' subcommand
     argparse::ArgumentParser add_cmd("add");
@@ -83,6 +84,7 @@ int handleQuickInput(int argc, char* argv[]) {
     program.add_subparser(add_cmd);
     program.add_subparser(view_cmd);
     program.add_subparser(del_cmd);
+    program.add_subparser(stp_cmd);
 
     try {
         program.parse_args(argc, argv);
@@ -92,6 +94,19 @@ int handleQuickInput(int argc, char* argv[]) {
         return -1;
     }
 
+    if (program.is_subcommand_used("setup")) {
+        std::cout << "Seting up wallets..." << std::endl;
+        if (StorageHandler::setupWallets("../wallets.json") != 0)
+            return -1;
+        std::cout << "Done!" << std::endl;
+        std::cout << "Setting up transaction file..." << std::endl;
+        if (StorageHandler::setupTransactions("../transactions.json") != 0)
+            return -1;
+        std::cout << "Done!" << std::endl;
+        return 0;
+    }
+
+    StorageHandler storageHandler("../wallets.json", "../transactions.json");
     if (program.is_subcommand_used("add")) {
         std::string transaction = add_cmd.get<std::string>("transaction");
         float amount = add_cmd.get<float>("amount");

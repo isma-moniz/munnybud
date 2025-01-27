@@ -42,6 +42,8 @@ private:
     int storeData();
     int storeFile(const std::string& filePath, json& data);
 public:
+    static int setupWallets(const std::string& walletFile);
+    static int setupTransactions(const std::string& transactionFile);
     StorageHandler(const std::string& walletFile, const std::string& transactionFile);
     int storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet);
     int deleteTransaction(int id);
