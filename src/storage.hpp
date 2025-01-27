@@ -46,7 +46,7 @@ public:
     static int setupWallets(const std::string& walletFile);
     static int setupTransactions(const std::string& transactionFile);
     StorageHandler(const std::string& walletFile, const std::string& transactionFile);
-    int storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet);
+    int storeTransaction(Transaction& transaction);
     int deleteTransaction(int id);
     int retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result);
     int retrieveDailyExpenses(const std::string& date, std::vector<Transaction>& result);

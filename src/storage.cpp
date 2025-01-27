@@ -144,22 +144,16 @@ StorageHandler::StorageHandler(const std::string& _walletFile, const std::string
  *
  *@return 0 on success, -1 on failure
  */
-int StorageHandler::storeTransaction(float amount, const std::string& category, const std::string& description, const std::string& date, const std::string& wallet) {
+int StorageHandler::storeTransaction(Transaction& transaction) {
     std::string wlt;
-    if (wallet == "default")
+    if (transaction.wallet == "default")
         wlt = StorageHandler::default_wallet;
-    else wlt = wallet;
-    float amountInCents = std::round(amount * 100);
+    else wlt = transaction.wallet;
+    
     // expense in json format
-    json transaction = {
-        {"id", ++Transaction::currentID},
-        {"amount", static_cast<int>(amountInCents)}, // convert to integer cent amount
-        {"category", category},
-        {"description", description},
-        {"wallet", wlt}
-    };
+    json jsonTransaction = transaction.toJson(); //TODO figure out id issue
 
-    if (updateBalance(wlt, static_cast<int>(amountInCents)) != 0) {
+    if (updateBalance(wlt, jsonTransaction["amount"]) != 0) {
         Transaction::currentID--;
         return -1;
     }
@@ -170,9 +164,9 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
         return -1;
     }
 
-    if(!transactions["data"].contains(date) || !transactions["data"][date].is_array())
-        transactions["data"][date] = json::array();
-    transactions["data"][date].push_back(transaction);
+    if(!transactions["data"].contains(transaction.date) || !transactions["data"][transaction.date].is_array())
+        transactions["data"][transaction.date] = json::array();
+    transactions["data"][transaction.date].push_back(jsonTransaction);
     transactions["metadata"]["currentID"] = Transaction::currentID;
     return storeData();
 }
@@ -180,7 +174,7 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
 int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
     if (transactions["data"].contains(base_date)) {
         for (auto it : transactions["data"][base_date]) {
-            Transaction transaction = Transaction::fromJson(it);
+            Transaction transaction(it);
             transaction.date = base_date;
             result.push_back(transaction);
         }
@@ -200,7 +194,7 @@ int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::ve
         std::chrono::year_month_day currentDate = parseYMD(key);
         if (currentDate >= startOfWeek && currentDate <= endOfWeek) {
             for (const auto& expense : value) {
-                Transaction transaction = Transaction::fromJson(expense);
+                Transaction transaction(expense);
                 transaction.date = key;
                 result.push_back(transaction);
             }
@@ -216,7 +210,7 @@ int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, std::v
             std::chrono::year_month_day currentDate = parseYMD(key);
             if (same_month(base_ymd, currentDate)) {
                 for (const auto& expense : value) {
-                    Transaction transaction = Transaction::fromJson(expense);
+                    Transaction transaction(expense);
                     transaction.date = key;
                     result.push_back(transaction);
                 }
