@@ -11,7 +11,6 @@ using json = nlohmann::json;
 class Transaction {
 private:
     static void filter(std::vector<Transaction>& transactions, const std::function<bool(const Transaction&)>& predicate);
-    std::unordered_map<int, Transaction> transactionById;
 
 public:
     static int currentID;

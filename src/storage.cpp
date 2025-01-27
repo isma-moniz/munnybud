@@ -109,6 +109,15 @@ void StorageHandler::loadData() {
 
     if (!wallets.contains("default_wallet")) throw std::runtime_error("Could not find default wallet.");
     StorageHandler::default_wallet = wallets["default_wallet"];
+
+    transactionsById.clear();
+    for (const auto& [date, txList] : transactions.items()) {
+        for (const auto& tx : txList) {
+            Transaction txObj(tx);
+            txObj.date = date;
+            transactionsById[txObj.id] = txObj;
+        }
+    }
 }
 
 int StorageHandler::storeFile(const std::string& filePath, json& data) {

@@ -38,6 +38,8 @@ private:
     std::string transactionFile; 
     static std::string default_wallet;
 
+    std::unordered_map<int, Transaction> transactionsById;
+
     void loadData();
     json loadFile(const std::string& filePath);
     int storeData();
