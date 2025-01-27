@@ -106,6 +106,8 @@ void StorageHandler::loadData() {
     transactions = loadFile(transactionFile);
     if (!transactions.contains("metadata") || !transactions["metadata"].contains("currentID")) throw std::runtime_error("Transaction metadata invalid.");
     Transaction::currentID = transactions["metadata"]["currentID"];
+
+    if (!wallets.contains("default_wallet")) throw std::runtime_error("Could not find default wallet.");
     StorageHandler::default_wallet = wallets["default_wallet"];
 }
 
@@ -163,7 +165,9 @@ int StorageHandler::storeTransaction(float amount, const std::string& category, 
     }
 
     if (!transactions.contains("data") || !transactions["data"].is_object()) {
-        transactions["data"] = json::object();
+        Transaction::currentID--;
+        std::cerr << "Invalid file structure: couldn't find 'data' object.\n";
+        return -1;
     }
 
     if(!transactions["data"].contains(date) || !transactions["data"][date].is_array())
