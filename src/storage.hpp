@@ -42,6 +42,7 @@ private:
     std::unordered_map<int, Transaction> transactionsById;
     std::unordered_map<std::string, std::vector<int>> transactionsByWallet;
     std::unordered_map<std::string, std::vector<int>> transactionsByCategory;
+    std::unordered_map<std::string, std::vector<int>> transactionsByDate;
 
     void loadData();
     json loadFile(const std::string& filePath);

@@ -28,6 +28,14 @@ std::chrono::year_month_day parseYMD(const std::string& dateString) {
     return ymd;
 }
 
+std::string formatYMD(const std::chrono::year_month_day& dateYMD) {
+    std::ostringstream oss;
+    oss << static_cast<int>(dateYMD.year()) << '-' 
+        << std::setw(2) << std::setfill('0') << static_cast<unsigned>(dateYMD.month()) << '-' 
+        << std::setw(2) <<std::setfill('0') << static_cast<unsigned>(dateYMD.day());
+    return oss.str();
+}
+
 bool same_month(const std::chrono::year_month_day& d1, const std::chrono::year_month_day& d2) {
     return d1.year() == d2.year() && d1.month() == d2.month();
 }

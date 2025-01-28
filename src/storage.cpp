@@ -113,6 +113,7 @@ void StorageHandler::loadData() {
     transactionsById.clear();
     transactionsByWallet.clear();
     transactionsByCategory.clear();
+    transactionsByDate.clear();
     for (const auto& [date, txList] : transactions["data"].items()) {
         for (const auto& tx : txList) {
             Transaction txObj(tx);
@@ -120,6 +121,7 @@ void StorageHandler::loadData() {
             transactionsById.try_emplace(txObj.id, txObj);
             transactionsByCategory[txObj.category].push_back(txObj.id);
             transactionsByWallet[txObj.wallet].push_back(txObj.id);
+            transactionsByDate[txObj.date].push_back(txObj.id);
         }
     } 
 }
@@ -206,16 +208,18 @@ const std::vector<int>& StorageHandler::getTransactionsByCategory(const std::str
 }
 
 int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
-    if (transactions["data"].contains(base_date)) {
-        for (auto it : transactions["data"][base_date]) {
-            Transaction transaction(it);
-            transaction.date = base_date;
-            result.push_back(transaction);
-        }
-        return 0;
-    } else {
+    auto it = transactionsByDate.find(base_date);
+    if (it == transactionsByDate.end())
         return -1;
+    else {
+        for (int id : it->second) {
+            auto it2 = transactionsById.find(id);
+            if (it2 == transactionsById.end())
+                throw std::runtime_error("Transaction not found.");
+            result.push_back(it2->second);
+        }
     }
+    return 0;
 }
 
 int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
@@ -223,18 +227,17 @@ int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::ve
     std::chrono::year_month_day startOfWeek, endOfWeek;
 
     getWeek(baseDate, startOfWeek, endOfWeek);
-
-    for (const auto& [key, value]: transactions["data"].items()) {
-        std::chrono::year_month_day currentDate = parseYMD(key);
-        if (currentDate >= startOfWeek && currentDate <= endOfWeek) {
-            for (const auto& expense : value) {
-                Transaction transaction(expense);
-                transaction.date = key;
-                result.push_back(transaction);
-            }
+    std::chrono::sys_days start = std::chrono::sys_days(startOfWeek);
+    std::chrono::sys_days end = std::chrono::sys_days(endOfWeek);
+    for (std::chrono::sys_days current=start; current<=end; current+=std::chrono::days{1}) {
+        std::string currentDateStr = formatYMD(std::chrono::year_month_day{current});
+        auto it = transactionsByDate.find(currentDateStr);
+        if (it != transactionsByDate.end()) {
+            for (int id : it->second)
+                result.push_back(transactionsById.at(id));
         }
     }
-    if (empty(result)) return -1;
+    if (result.empty()) return -1;
     return 0;
 }
 
