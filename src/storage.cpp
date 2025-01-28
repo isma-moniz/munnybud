@@ -9,6 +9,7 @@
 #include <chrono>
 #include <regex>
 #include <iterator>
+#include <stdexcept>
 
 std::string transactionFilePath = "../transactions.json";
 std::string walletsFilePath = "../wallets.json";
@@ -113,7 +114,8 @@ void StorageHandler::loadData() {
     transactionsById.clear();
     transactionsByWallet.clear();
     transactionsByCategory.clear();
-    transactionsByDate.clear();
+    transactionsByDateHashed.clear();
+    transactionsByDateMap.clear();
     for (const auto& [date, txList] : transactions["data"].items()) {
         for (const auto& tx : txList) {
             Transaction txObj(tx);
@@ -121,7 +123,8 @@ void StorageHandler::loadData() {
             transactionsById.try_emplace(txObj.id, txObj);
             transactionsByCategory[txObj.category].push_back(txObj.id);
             transactionsByWallet[txObj.wallet].push_back(txObj.id);
-            transactionsByDate[txObj.date].push_back(txObj.id);
+            transactionsByDateHashed[txObj.date].push_back(txObj.id);
+            transactionsByDateMap[txObj.date].push_back(txObj.id);
         }
     } 
 }
@@ -208,8 +211,8 @@ const std::vector<int>& StorageHandler::getTransactionsByCategory(const std::str
 }
 
 int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
-    auto it = transactionsByDate.find(base_date);
-    if (it == transactionsByDate.end())
+    auto it = transactionsByDateHashed.find(base_date);
+    if (it == transactionsByDateHashed.end())
         return -1;
     else {
         for (int id : it->second) {
@@ -227,14 +230,23 @@ int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::ve
     std::chrono::year_month_day startOfWeek, endOfWeek;
 
     getWeek(baseDate, startOfWeek, endOfWeek);
-    std::chrono::sys_days start = std::chrono::sys_days(startOfWeek);
-    std::chrono::sys_days end = std::chrono::sys_days(endOfWeek);
-    for (std::chrono::sys_days current=start; current<=end; current+=std::chrono::days{1}) {
-        std::string currentDateStr = formatYMD(std::chrono::year_month_day{current});
-        auto it = transactionsByDate.find(currentDateStr);
-        if (it != transactionsByDate.end()) {
-            for (int id : it->second)
-                result.push_back(transactionsById.at(id));
+    std::string start = formatYMD(startOfWeek);
+    std::string end = formatYMD(endOfWeek);
+    auto lowBound = transactionsByDateMap.lower_bound(start);
+    auto highBound = transactionsByDateMap.upper_bound(end);
+
+    if (lowBound == transactionsByDateMap.end()) {
+        return -1; // No transactions in the given range
+    }
+
+    for (auto it = lowBound; it != highBound; ++it) {
+        for (int transactionID : it->second) {
+            try {
+                auto transactionObj = transactionsById.at(transactionID);
+                result.push_back(transactionObj);
+            } catch (std::out_of_range& error) {
+                std::cerr << "Could not find transaction with id " << transactionID;
+            }   
         }
     }
     if (result.empty()) return -1;
@@ -243,17 +255,29 @@ int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::ve
 
 int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
     std::chrono::year_month_day base_ymd = parseYMD(base_date);
-    for (const auto& [key, value] : transactions["data"].items()) {
-            std::chrono::year_month_day currentDate = parseYMD(key);
-            if (same_month(base_ymd, currentDate)) {
-                for (const auto& expense : value) {
-                    Transaction transaction(expense);
-                    transaction.date = key;
-                    result.push_back(transaction);
-                }
+    std::chrono::year_month_day startOfMonth = base_ymd.year() / base_ymd.month() / std::chrono::day(1);
+    std::chrono::year_month_day endOfMonth = base_ymd.year() / base_ymd.month() / std::chrono::last;
+    std::string start = formatYMD(startOfMonth);
+    std::string end = formatYMD(endOfMonth);
+
+    auto lowBound = transactionsByDateMap.lower_bound(start);
+    auto highBound = transactionsByDateMap.upper_bound(end);
+
+    if (lowBound == transactionsByDateMap.end()) {
+        return -1;
+    }
+    
+    for (auto it = lowBound; it != highBound; ++it) {
+        for (int transactionID : it->second) {
+            try {
+                auto transactionObj = transactionsById.at(transactionID);
+                result.push_back(transactionObj);
+            } catch (std::out_of_range& error) {
+                std::cerr << "Could not find transaction with id " << transactionID;
             }
         }
-    if (empty(result)) return -1;
+    }
+    if (result.empty()) return -1;
     return 0;
 }
 
