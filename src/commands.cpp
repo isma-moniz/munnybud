@@ -109,16 +109,21 @@ int handleQuickInput(int argc, char* argv[]) {
     StorageHandler storageHandler("../wallets.json", "../transactions.json");
     if (program.is_subcommand_used("add")) {
         std::string transaction = add_cmd.get<std::string>("transaction");
-        float amount = add_cmd.get<float>("amount");
+        float amountFloat = add_cmd.get<float>("amount");
+        int amount = static_cast<int>(std::round(amountFloat * 100));
         std::string category = add_cmd.get<std::string>("--category");
         std::string label = add_cmd.get<std::string>("--label");
         std::string date = add_cmd.get<std::string>("--date");
         std::string wallet = add_cmd.get<std::string>("--wallet");
         if (transaction == "expense") {
-            if (storageHandler.storeTransaction(-amount, category, label, date, wallet) < 0)
+            Transaction tx(-amount, category, label, wallet);
+            tx.date = date;
+            if (storageHandler.storeTransaction(tx) < 0)
                 return -1;
         } else {
-            if (storageHandler.storeTransaction(amount, category, label, date, wallet) < 0)
+            Transaction tx(amount, category, label, wallet);
+            tx.date = date;
+            if (storageHandler.storeTransaction(tx) < 0)
                 return -1;
         }
 

@@ -101,23 +101,27 @@ json StorageHandler::loadFile(const std::string& filePath) {
     return data;
 }
 
-void StorageHandler::loadData() { 
+void StorageHandler::loadData() {
     wallets = loadFile(walletFile);
     transactions = loadFile(transactionFile);
     if (!transactions.contains("metadata") || !transactions["metadata"].contains("currentID")) throw std::runtime_error("Transaction metadata invalid.");
     Transaction::currentID = transactions["metadata"]["currentID"];
-
     if (!wallets.contains("default_wallet")) throw std::runtime_error("Could not find default wallet.");
     StorageHandler::default_wallet = wallets["default_wallet"];
-
+    
+    // populate indexes
     transactionsById.clear();
-    for (const auto& [date, txList] : transactions.items()) {
+    transactionsByWallet.clear();
+    transactionsByCategory.clear();
+    for (const auto& [date, txList] : transactions["data"].items()) {
         for (const auto& tx : txList) {
             Transaction txObj(tx);
             txObj.date = date;
-            transactionsById[txObj.id] = txObj;
+            transactionsById.try_emplace(txObj.id, txObj);
+            transactionsByCategory[txObj.category].push_back(txObj.id);
+            transactionsByWallet[txObj.wallet].push_back(txObj.id);
         }
-    }
+    } 
 }
 
 int StorageHandler::storeFile(const std::string& filePath, json& data) {
@@ -160,7 +164,7 @@ int StorageHandler::storeTransaction(Transaction& transaction) {
     else wlt = transaction.wallet;
     
     // expense in json format
-    json jsonTransaction = transaction.toJson(); //TODO figure out id issue
+    json jsonTransaction = transaction.toJson();
 
     if (updateBalance(wlt, jsonTransaction["amount"]) != 0) {
         Transaction::currentID--;
@@ -178,6 +182,27 @@ int StorageHandler::storeTransaction(Transaction& transaction) {
     transactions["data"][transaction.date].push_back(jsonTransaction);
     transactions["metadata"]["currentID"] = Transaction::currentID;
     return storeData();
+}
+
+Transaction& StorageHandler::getTransactionById(int id) {
+    auto it = transactionsById.find(id);
+    if (it == transactionsById.end())
+        throw std::runtime_error("Transaction not found.");
+    return it->second;
+}
+
+const std::vector<int>& StorageHandler::getTransactionsByWallet(const std::string& wallet) const {
+    auto it = transactionsByWallet.find(wallet);
+    if (it == transactionsByWallet.end())
+        throw std::runtime_error("Transaction not found.");
+    return it->second;
+}
+
+const std::vector<int>& StorageHandler::getTransactionsByCategory(const std::string& category) const {
+    auto it = transactionsByCategory.find(category);
+    if (it == transactionsByCategory.end())
+        throw std::runtime_error("Transaction not found");
+    return it->second;
 }
 
 int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
@@ -283,13 +308,17 @@ float StorageHandler::retrieveBalance(const std::string& wallet) {
 }
 
 int StorageHandler::updateBalance(const std::string& wallet, int amount) {
-    if (!wallets["wallets"].contains(wallet)) {
-        std::cerr << "Error: Wallet '" << wallet << "' does not exist. Unable to update wallet balance." << std::endl;
+    std::string wlt;
+    if  (wallet == "default")
+        wlt = StorageHandler::default_wallet;
+    else wlt = wallet;
+    if (!wallets["wallets"].contains(wlt)) {
+        std::cerr << "Error: Wallet '" << wlt << "' does not exist. Unable to update wallet balance." << std::endl;
         return -1;
 
     } 
-    std::cout << wallets["wallets"][wallet] << std::endl;
-    wallets["wallets"][wallet] = wallets["wallets"][wallet].get<int>() + amount;
-    std::cout << wallets["wallets"][wallet].get<int>() << std::endl;
+    std::cout << wallets["wallets"][wlt] << std::endl;
+    wallets["wallets"][wlt] = wallets["wallets"][wlt].get<int>() + amount;
+    std::cout << wallets["wallets"][wlt].get<int>() << std::endl;
     return 0;
 }

@@ -37,19 +37,29 @@ private:
     std::string walletFile;
     std::string transactionFile; 
     static std::string default_wallet;
-
+    
+    // indexes computed at runtime
     std::unordered_map<int, Transaction> transactionsById;
+    std::unordered_map<std::string, std::vector<int>> transactionsByWallet;
+    std::unordered_map<std::string, std::vector<int>> transactionsByCategory;
 
     void loadData();
     json loadFile(const std::string& filePath);
     int storeData();
     int storeFile(const std::string& filePath, json& data);
-public: 
+public:
+    StorageHandler(const std::string& walletFile, const std::string& transactionFile);
+
     static int setupWallets(const std::string& walletFile);
     static int setupTransactions(const std::string& transactionFile);
-    StorageHandler(const std::string& walletFile, const std::string& transactionFile);
+    
     int storeTransaction(Transaction& transaction);
     int deleteTransaction(int id);
+
+    Transaction& getTransactionById(int id);
+    const std::vector<int>& getTransactionsByCategory(const std::string& category) const;
+    const std::vector<int>& getTransactionsByWallet(const std::string& wallet) const;
+
     int retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result);
     int retrieveDailyExpenses(const std::string& date, std::vector<Transaction>& result);
     int retrieveWeeklyExpenses(const std::string& date, std::vector<Transaction>& result);
