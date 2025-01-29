@@ -13,7 +13,7 @@
 #define STORAGE_HPP
 
 #include "utils.hpp"
-#include "transaction.hpp"
+#include "indexmanager.hpp"
 
 #include <string>
 #include <stdio.h>
@@ -37,19 +37,18 @@ private:
     std::string walletFile;
     std::string transactionFile; 
     static std::string default_wallet;
-    
-    // indexes computed at runtime
-    std::unordered_map<int, Transaction> transactionsById;
-    std::unordered_map<std::string, std::vector<int>> transactionsByWallet;
-    std::unordered_map<std::string, std::vector<int>> transactionsByCategory;
-    std::unordered_map<std::string, std::vector<int>> transactionsByDateHashed;
-    std::map<std::string, std::vector<int>> transactionsByDateMap;
+    IndexManager idxManager; 
 
     void loadData();
     json loadFile(const std::string& filePath);
     int storeData();
     int storeFile(const std::string& filePath, json& data);
 public:
+    void populateIdIdx();
+    void populateWalletIdx();
+    void populateCategoryIdx();
+    void populateDateHash();
+    void populateDateMap();
     StorageHandler(const std::string& walletFile, const std::string& transactionFile);
 
     static int setupWallets(const std::string& walletFile);
@@ -59,8 +58,8 @@ public:
     int deleteTransaction(int id);
 
     Transaction& getTransactionById(int id);
-    const std::vector<int>& getTransactionsByCategory(const std::string& category) const;
-    const std::vector<int>& getTransactionsByWallet(const std::string& wallet) const;
+    int getTransactionsByCategory(const std::string& category, std::vector<Transaction>& result);
+    int getTransactionsByWallet(const std::string& wallet, std::vector<Transaction>& result);
 
     int retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result);
     int retrieveDailyExpenses(const std::string& date, std::vector<Transaction>& result);

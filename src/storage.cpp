@@ -8,7 +8,6 @@
 #include "storage.hpp"
 #include <chrono>
 #include <regex>
-#include <iterator>
 #include <stdexcept>
 
 std::string transactionFilePath = "../transactions.json";
@@ -108,25 +107,7 @@ void StorageHandler::loadData() {
     if (!transactions.contains("metadata") || !transactions["metadata"].contains("currentID")) throw std::runtime_error("Transaction metadata invalid.");
     Transaction::currentID = transactions["metadata"]["currentID"];
     if (!wallets.contains("default_wallet")) throw std::runtime_error("Could not find default wallet.");
-    StorageHandler::default_wallet = wallets["default_wallet"];
-    
-    // populate indexes
-    transactionsById.clear();
-    transactionsByWallet.clear();
-    transactionsByCategory.clear();
-    transactionsByDateHashed.clear();
-    transactionsByDateMap.clear();
-    for (const auto& [date, txList] : transactions["data"].items()) {
-        for (const auto& tx : txList) {
-            Transaction txObj(tx);
-            txObj.date = date;
-            transactionsById.try_emplace(txObj.id, txObj);
-            transactionsByCategory[txObj.category].push_back(txObj.id);
-            transactionsByWallet[txObj.wallet].push_back(txObj.id);
-            transactionsByDateHashed[txObj.date].push_back(txObj.id);
-            transactionsByDateMap[txObj.date].push_back(txObj.id);
-        }
-    } 
+    StorageHandler::default_wallet = wallets["default_wallet"]; 
 }
 
 int StorageHandler::storeFile(const std::string& filePath, json& data) {
@@ -145,7 +126,8 @@ int StorageHandler::storeData() {
 }
 
 StorageHandler::StorageHandler(const std::string& _walletFile, const std::string& _transactionFile) : walletFile(_walletFile), transactionFile(_transactionFile) {
-    loadData(); 
+    loadData();
+    // loadAllIndexes, if running in gui mode
 }
 
 /**
@@ -189,92 +171,143 @@ int StorageHandler::storeTransaction(Transaction& transaction) {
     return storeData();
 }
 
+void StorageHandler::populateIdIdx() {
+    if (!idxManager.isIdIdxPopulated)
+        idxManager.populateIdIdx(transactions);
+}
+
+void StorageHandler::populateWalletIdx() {
+    if (!idxManager.isWalletIdxPopulated)
+        idxManager.populateWalletIdx(transactions);
+}
+
+void StorageHandler::populateCategoryIdx() {
+    if (!idxManager.isCategoryIdxPopulated)
+        idxManager.populateCategoryIndex(transactions);
+}
+
+void StorageHandler::populateDateHash() {
+    if (!idxManager.isDateHashPopulated)
+        idxManager.populateDateHash(transactions);
+}
+
+void StorageHandler::populateDateMap() {
+    if (!idxManager.isDateMapPopulated)
+        idxManager.populateDateMap(transactions);
+}
+
 Transaction& StorageHandler::getTransactionById(int id) {
-    auto it = transactionsById.find(id);
-    if (it == transactionsById.end())
+    populateIdIdx(); 
+    auto it = idxManager.transactionsById.find(id);
+    if (it == idxManager.transactionsById.end())
         throw std::runtime_error("Transaction not found.");
     return it->second;
 }
 
-const std::vector<int>& StorageHandler::getTransactionsByWallet(const std::string& wallet) const {
-    auto it = transactionsByWallet.find(wallet);
-    if (it == transactionsByWallet.end())
-        throw std::runtime_error("Transaction not found.");
-    return it->second;
-}
-
-const std::vector<int>& StorageHandler::getTransactionsByCategory(const std::string& category) const {
-    auto it = transactionsByCategory.find(category);
-    if (it == transactionsByCategory.end())
-        throw std::runtime_error("Transaction not found");
-    return it->second;
-}
-
-int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
-    auto it = transactionsByDateHashed.find(base_date);
-    if (it == transactionsByDateHashed.end())
-        return -1;
-    else {
-        for (int id : it->second) {
-            auto it2 = transactionsById.find(id);
-            if (it2 == transactionsById.end())
-                throw std::runtime_error("Transaction not found.");
-            result.push_back(it2->second);
-        }
-    }
-    return 0;
-}
-
-int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
-    std::chrono::year_month_day baseDate = parseYMD(base_date);
-    std::chrono::year_month_day startOfWeek, endOfWeek;
-
-    getWeek(baseDate, startOfWeek, endOfWeek);
-    std::string start = formatYMD(startOfWeek);
-    std::string end = formatYMD(endOfWeek);
-    auto lowBound = transactionsByDateMap.lower_bound(start);
-    auto highBound = transactionsByDateMap.upper_bound(end);
-
-    if (lowBound == transactionsByDateMap.end()) {
-        return -1; // No transactions in the given range
-    }
-
-    for (auto it = lowBound; it != highBound; ++it) {
-        for (int transactionID : it->second) {
-            try {
-                auto transactionObj = transactionsById.at(transactionID);
-                result.push_back(transactionObj);
-            } catch (std::out_of_range& error) {
-                std::cerr << "Could not find transaction with id " << transactionID;
-            }   
+int StorageHandler::getTransactionsByWallet(const std::string& wallet, std::vector<Transaction>& result) {
+    populateWalletIdx();
+    auto it = idxManager.transactionsByWallet.find(wallet);
+    if (it == idxManager.transactionsByWallet.end())
+        throw std::runtime_error("Wallet not found.");
+    for (auto& transactionID : it->second) {
+        try {
+            result.push_back(getTransactionById(transactionID));
+        } catch (std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+            return -1;
         }
     }
     if (result.empty()) return -1;
     return 0;
 }
 
+int StorageHandler::getTransactionsByCategory(const std::string& category, std::vector<Transaction>& result) {
+    populateCategoryIdx();
+    auto it = idxManager.transactionsByCategory.find(category);
+    if (it == idxManager.transactionsByCategory.end())
+        throw std::runtime_error("Transaction not found");
+    for (auto& transactionID : it->second) {
+        try {
+            result.push_back(getTransactionById(transactionID));
+        } catch(std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+            return -1;
+        }
+    }
+    if (result.empty()) return -1;
+    return 0;
+}
+
+int StorageHandler::retrieveDailyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
+    populateDateHash();
+    auto it = idxManager.transactionsByDateHashed.find(base_date);
+    if (it == idxManager.transactionsByDateHashed.end())
+        return -1;
+    else {
+        try {
+            for (int id : it->second) {
+                result.push_back(getTransactionById(id));
+            }
+        } catch (std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int StorageHandler::retrieveWeeklyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
+    populateDateMap();
+    std::chrono::year_month_day baseDate = parseYMD(base_date);
+    std::chrono::year_month_day startOfWeek, endOfWeek;
+
+    getWeek(baseDate, startOfWeek, endOfWeek);
+    std::string start = formatYMD(startOfWeek);
+    std::string end = formatYMD(endOfWeek);
+    auto lowBound = idxManager.transactionsByDateMap.lower_bound(start);
+    auto highBound = idxManager.transactionsByDateMap.upper_bound(end);
+
+    if (lowBound == idxManager.transactionsByDateMap.end()) {
+        return -1; // No transactions in the given range
+    }
+
+    for (auto it = lowBound; it != highBound; ++it) {
+        try {
+            for (int transactionID : it->second) {
+                result.push_back(getTransactionById(transactionID));
+            }
+        } catch (std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+            return -1;
+        } 
+    }
+    if (result.empty()) return -1;
+    return 0;
+}
+
 int StorageHandler::retrieveMonthlyExpenses(const std::string& base_date, std::vector<Transaction>& result) {
+    populateDateMap();
     std::chrono::year_month_day base_ymd = parseYMD(base_date);
     std::chrono::year_month_day startOfMonth = base_ymd.year() / base_ymd.month() / std::chrono::day(1);
     std::chrono::year_month_day endOfMonth = base_ymd.year() / base_ymd.month() / std::chrono::last;
     std::string start = formatYMD(startOfMonth);
     std::string end = formatYMD(endOfMonth);
 
-    auto lowBound = transactionsByDateMap.lower_bound(start);
-    auto highBound = transactionsByDateMap.upper_bound(end);
+    auto lowBound = idxManager.transactionsByDateMap.lower_bound(start);
+    auto highBound = idxManager.transactionsByDateMap.upper_bound(end);
 
-    if (lowBound == transactionsByDateMap.end()) {
+    if (lowBound == idxManager.transactionsByDateMap.end()) {
         return -1;
     }
     
     for (auto it = lowBound; it != highBound; ++it) {
-        for (int transactionID : it->second) {
-            try {
-                auto transactionObj = transactionsById.at(transactionID);
-                result.push_back(transactionObj);
-            } catch (std::out_of_range& error) {
-                std::cerr << "Could not find transaction with id " << transactionID;
-            }
+        try{
+            for (int transactionID : it->second) {
+                result.push_back(getTransactionById(transactionID));
+            }        
+        } catch (std::runtime_error& e) {
+                std::cerr << e.what() << '\n';
+                return -1;
         }
     }
     if (result.empty()) return -1;
