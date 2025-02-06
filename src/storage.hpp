@@ -1,11 +1,7 @@
 /**
  * @file utils.cpp
  * @author Ismael Moniz (hismamoniz@gmail.com)
- * @brief Header file for storage management functions that interact with the json data directly
- * @version 0.1
- * @date 2024-12-14
- *
- * @copyright Copyright (c) 2024
+ * @brief Header file for storage management and organization functions that interact with the json data directly
  *
  */
 
