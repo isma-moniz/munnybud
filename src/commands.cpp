@@ -109,14 +109,14 @@ int handleViewCmd(argparse::ArgumentParser& view_cmd, StorageHandler& storageHan
     std::string wallet = view_cmd.get<std::string>("--wallet");
     std::string category = view_cmd.get<std::string>("--category");
     std::string groupBy = view_cmd.get<std::string>("--group");
-    std::vector<Transaction> result;
+    std::unordered_map<std::string, std::vector<Transaction>> result;
 
-    if (storageHandler.retrieveTransactions(date, rng, wallet, category, result) < 0)   {
+    if (storageHandler.retrieveTransactions(date, rng, wallet, category, result, groupBy) < 0)   {
         std::cout << "No expenses made in specified range.\n";
         return -1;
     }
 
-    printResults(result);
+    printResultsGrouped(groupBy, result);
     return 0;
 }
 

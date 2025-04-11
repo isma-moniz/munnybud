@@ -1,6 +1,7 @@
 #include "interface.hpp"
 #include <cctype>
 #include <stdexcept>
+#include <iostream>
 
 void printResults(std::vector<Transaction>& results) {
     for (const auto& transaction : results) {
@@ -14,18 +15,16 @@ void printResults(std::vector<Transaction>& results) {
     }
 }
 
-void printResultsWithGrouping(std::vector<Transaction>& results, const std::string& groupBy) {
-    std::unordered_map<std::string, std::vector<Transaction>> groupedResults;    
-
-    groupedResults = Transaction::groupBy(results, groupBy);
-    
-    if (groupBy == "date")
+void printResultsGrouped(const std::string& groupBy, const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+    if (groupBy == "date") {
         printGroupedByDate(groupedResults);
-    else if (groupBy == "category")
+    } else if (groupBy == "category") {
         printGroupedByCategory(groupedResults);
-    else if (groupBy == "wallet")
+    } else if (groupBy == "wallet") {
         printGroupedByWallet(groupedResults);
-    else throw std::invalid_argument("Invalid groupBy argument.");
+    } else {
+        throw std::runtime_error("Invalid grouping category: " + groupBy + "\n");
+    }
 }
 
 void printGroupedByDate(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
@@ -72,4 +71,3 @@ void printGroupedByWallet(const std::unordered_map<std::string, std::vector<Tran
         }
     }
 }
-

@@ -8,15 +8,11 @@
 #ifndef STORAGE_HPP
 #define STORAGE_HPP
 
-#include "utils.hpp"
 #include "indexmanager.hpp"
 
 #include <string>
-#include <stdio.h>
 #include "json.hpp"
-#include <fstream>
 #include <vector>
-#include <iostream>
 #include <ctime>
 
 using json = nlohmann::json;
@@ -60,7 +56,9 @@ public:
     int retrieveWeeklyTransactions(const std::string& date, std::unordered_set<int> &result);
     int retrieveMonthlyTransactions(const std::string& date, std::unordered_set<int> &result);
 
-    int retrieveTransactions(const std::string& base_date, int range, const std::string& wallet, const std::string& category, std::vector<Transaction>& result);
+    int retrieveTransactions(const std::string& base_date, int range, const std::string& wallet, 
+        const std::string& category, std::unordered_map<std::string, std::vector<Transaction>>& result,
+        const std::string& groupBy);
 
     float retrieveBalance(const std::string& wallet);
     int updateBalance(const std::string& wallet, int amount);

@@ -11,6 +11,8 @@
 #include <chrono>
 #include <regex>
 #include <stdexcept>
+#include <fstream>
+#include <iostream>
 
 /**
 * @brief Sets up a new transaction json file with the proper structure.
@@ -425,7 +427,7 @@ int StorageHandler::retrieveMonthlyTransactions(const std::string &base_date,
 * @return int 
 */
 int StorageHandler::retrieveTransactions(const std::string &base_date, int range, const std::string& wallet, const std::string& category,
-                                    std::vector<Transaction> &result) {
+                                    std::unordered_map<std::string, std::vector<Transaction>> &result, const std::string& groupBy) {
     
     idxManager.populateAllIdxs(transactions); // the overhead from this is pretty much negligible at this point, but I'll fix it later
 
@@ -434,6 +436,17 @@ int StorageHandler::retrieveTransactions(const std::string &base_date, int range
     std::unordered_set<int> dateTransactions;
     std::vector<std::unordered_set<int>> setVec;
     std::string date;
+
+    std::function<std::string(const Transaction&)> extractor;
+
+    if (groupBy == "date")
+        extractor = [](const Transaction& t) { return t.date; };
+    else if (groupBy == "category")
+        extractor = [](const Transaction& t) { return t.category; };
+    else if (groupBy == "wallet")
+        extractor = [](const Transaction& t) { return t.wallet; };
+    else
+        throw std::invalid_argument("Invalid groupBy parameter.");
 
     if (base_date.empty() && wallet.empty() && category.empty()) {
         date = getCurrentDate();
@@ -451,7 +464,8 @@ int StorageHandler::retrieveTransactions(const std::string &base_date, int range
                 break;
         }
         for (int val : dateTransactions) {
-            result.push_back(getTransactionById(val));  
+            Transaction& transaction = getTransactionById(val);
+            result[extractor(transaction)].push_back(transaction);
         }
         return 0;
     }
@@ -482,7 +496,8 @@ int StorageHandler::retrieveTransactions(const std::string &base_date, int range
     }
     std::unordered_set<int> final = idxManager.setIntersection(setVec);
     for (int val : final) {
-        result.push_back(getTransactionById(val));
+        Transaction& transaction = getTransactionById(val);
+        result[extractor(transaction)].push_back(transaction);
     }
     return 0;
 }

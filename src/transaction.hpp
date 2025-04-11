@@ -3,7 +3,6 @@
 
 #include <string>
 #include "json.hpp"
-#include <unordered_map>
 
 using json = nlohmann::json;
 
@@ -20,7 +19,5 @@ public:
     Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt);
     Transaction(const json& transactionObject);
     json toJson() const;
-
-    static std::unordered_map<std::string, std::vector<Transaction>> groupBy(const std::vector<Transaction>& transactions, const std::string& property);
 };
 #endif
