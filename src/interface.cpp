@@ -2,7 +2,19 @@
 #include <cctype>
 #include <stdexcept>
 
-void printResults(std::vector<Transaction>& results, const std::string& groupBy) {
+void printResults(std::vector<Transaction>& results) {
+    for (const auto& transaction : results) {
+        std::cout << "Date: " << transaction.date << '\n';
+        std::cout << "ID: " << transaction.id << '\n';
+        std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction.amount / 100.0 << '\n';
+        std::cout << "Category: " << transaction.category << '\n';
+        std::cout << "Description: " << transaction.description << '\n';
+        std::cout << "Wallet: " << transaction.wallet << '\n';
+        std::cout << '\n';
+    }
+}
+
+void printResultsWithGrouping(std::vector<Transaction>& results, const std::string& groupBy) {
     std::unordered_map<std::string, std::vector<Transaction>> groupedResults;    
 
     groupedResults = Transaction::groupBy(results, groupBy);

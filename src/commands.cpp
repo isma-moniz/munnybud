@@ -1,17 +1,9 @@
 #include "commands.hpp"
-#include "argparse.hpp"
-#include "storage.hpp"
 #include "utils.hpp"
+#include "interface.hpp"
 #include <ostream>
 
-int handleQuickInput(int argc, char* argv[]) {
-    argparse::ArgumentParser program("munnybud");
-
-    // 'setup' subcommand
-    argparse::ArgumentParser stp_cmd("setup");
-
-    // 'add' subcommand
-    argparse::ArgumentParser add_cmd("add");
+void setupAddCmd(argparse::ArgumentParser& add_cmd) {
     add_cmd.add_argument("transaction")
         .help("Whether it's an expense or an income")
         .action([](const std::string& op) {
@@ -40,15 +32,10 @@ int handleQuickInput(int argc, char* argv[]) {
     add_cmd.add_argument("-w", "--wallet")
         .help("Wallet to charge expense from")
         .default_value(std::string("default"));
+    return;
+}
 
-    argparse::ArgumentParser del_cmd("delete");
-
-    del_cmd.add_argument("id")
-        .help("ID of the transaction to delete")
-        .scan<'i', int>();
-
-    //view subcommand
-    argparse::ArgumentParser view_cmd("view");
+void setupViewCmd(argparse::ArgumentParser& view_cmd) {
     view_cmd.add_argument("-d", "--date")
         .help("The base date of the transactions you want to consult. Default is today.")
         .default_value(std::string("")); // this will get replaced with the current date if no other filters are used
@@ -76,17 +63,98 @@ int handleQuickInput(int argc, char* argv[]) {
                 return groupBy;
         });
 
+    return;
+}
+
+int handleSetupCmd() {
+    std::cout << "Seting up wallets..." << std::endl;
+    if (StorageHandler::setupWallets("../wallets.json") != 0)
+        return -1;
+    std::cout << "Done!" << std::endl;
+    std::cout << "Setting up transaction file..." << std::endl;
+    if (StorageHandler::setupTransactions("../transactions.json") != 0)
+        return -1;
+    std::cout << "Done!" << std::endl;
+    return 0;
+}
+
+int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandler) {
+    std::string transaction = add_cmd.get<std::string>("transaction");
+    float amountFloat = add_cmd.get<float>("amount");
+    int amount = static_cast<int>(std::round(amountFloat * 100));
+    std::string category = add_cmd.get<std::string>("--category");
+    std::string label = add_cmd.get<std::string>("--label");
+    std::string date = add_cmd.get<std::string>("--date");
+    std::string wallet = add_cmd.get<std::string>("--wallet");
+    if (transaction == "expense") {
+        Transaction tx(-amount, category, label, wallet);
+        tx.date = date;
+        if (storageHandler.storeTransaction(tx) < 0)
+            return -1;
+    } else {
+        Transaction tx(amount, category, label, wallet);
+        tx.date = date;
+        if (storageHandler.storeTransaction(tx) < 0)
+            return -1;
+    }
+
+    std::cout << "Amount: " << amount << std::endl;
+    std::cout << "Transaction stored!\n";
+    return 0;
+}
+
+int handleViewCmd(argparse::ArgumentParser& view_cmd, StorageHandler& storageHandler) {
+    std::string date = view_cmd.get<std::string>("--date");
+    int rng = view_cmd.get<int>("--range");
+    std::string wallet = view_cmd.get<std::string>("--wallet");
+    std::string category = view_cmd.get<std::string>("--category");
+    std::string groupBy = view_cmd.get<std::string>("--group");
+    std::vector<Transaction> result;
+
+    if (storageHandler.retrieveTransactions(date, rng, wallet, category, result) < 0)   {
+        std::cout << "No expenses made in specified range.\n";
+        return -1;
+    }
+
+    printResults(result);
+    return 0;
+}
+
+int handleQuickInput(int argc, char* argv[]) {
+    // program root command
+    argparse::ArgumentParser program("munnybud");
+
+    // 'setup' subcommand
+    argparse::ArgumentParser stp_cmd("setup");
+
+    // 'add' subcommand
+    argparse::ArgumentParser add_cmd("add");
+    setupAddCmd(add_cmd);
+    
+    // 'delete' subcommand
+    argparse::ArgumentParser del_cmd("delete");
+    del_cmd.add_argument("id")
+        .help("ID of the transaction to delete")
+        .scan<'i', int>();
+
+    // 'view' subcommand
+    argparse::ArgumentParser view_cmd("view");
+    setupViewCmd(view_cmd);
+    
+    // 'balance' subcommand
     argparse::ArgumentParser balance_cmd("balance");
     balance_cmd.add_argument("-w", "--wallet")
         .help("The wallet you want to consult")
         .default_value(std::string("default"));
-
+    
+    // add subparsers to program root
     program.add_subparser(balance_cmd);
     program.add_subparser(add_cmd);
     program.add_subparser(view_cmd);
     program.add_subparser(del_cmd);
     program.add_subparser(stp_cmd);
-
+    
+    // parse arguments
     try {
         program.parse_args(argc, argv);
     } catch (const std::exception& err) {
@@ -94,62 +162,30 @@ int handleQuickInput(int argc, char* argv[]) {
         std::cerr << program;
         return -1;
     }
-
+    
+    // handle 'setup' subcommand
     if (program.is_subcommand_used("setup")) {
-        std::cout << "Seting up wallets..." << std::endl;
-        if (StorageHandler::setupWallets("../wallets.json") != 0)
-            return -1;
-        std::cout << "Done!" << std::endl;
-        std::cout << "Setting up transaction file..." << std::endl;
-        if (StorageHandler::setupTransactions("../transactions.json") != 0)
-            return -1;
-        std::cout << "Done!" << std::endl;
-        return 0;
+        return handleSetupCmd(); 
     }
-
+    
+    // other subcommands require a storageHandler to be constructed!
     StorageHandler storageHandler("../wallets.json", "../transactions.json");
+
+    // handle 'add' subcommand
     if (program.is_subcommand_used("add")) {
-        std::string transaction = add_cmd.get<std::string>("transaction");
-        float amountFloat = add_cmd.get<float>("amount");
-        int amount = static_cast<int>(std::round(amountFloat * 100));
-        std::string category = add_cmd.get<std::string>("--category");
-        std::string label = add_cmd.get<std::string>("--label");
-        std::string date = add_cmd.get<std::string>("--date");
-        std::string wallet = add_cmd.get<std::string>("--wallet");
-        if (transaction == "expense") {
-            Transaction tx(-amount, category, label, wallet);
-            tx.date = date;
-            if (storageHandler.storeTransaction(tx) < 0)
-                return -1;
-        } else {
-            Transaction tx(amount, category, label, wallet);
-            tx.date = date;
-            if (storageHandler.storeTransaction(tx) < 0)
-                return -1;
-        }
+        return handleAddCmd(add_cmd, storageHandler);
 
-        std::cout << "Amount: " << amount << std::endl;
-        std::cout << "Transaction stored!\n";
-
+    // handle 'view' subcommand
     } else if (program.is_subcommand_used("view")) {
-        std::string date = view_cmd.get<std::string>("--date");
-        int rng = view_cmd.get<int>("--range");
-        std::string wallet = view_cmd.get<std::string>("--wallet");
-        std::string category = view_cmd.get<std::string>("--category");
-        std::string groupBy = view_cmd.get<std::string>("--group");
-        std::vector<Transaction> result;
-        std::vector<std::string> filters{wallet, category};
-
-        if (storageHandler.retrieveTransactions(date, rng, wallet, category, result) < 0) {
-            std::cout << "No expenses made in specified range.\n";
-            return -1;
-        }
-
-        printResults(result, groupBy);
+        return handleViewCmd(view_cmd, storageHandler);
+    
+    // handle 'balance' subcommand
     } else if (program.is_subcommand_used("balance")) {
         std::string wallet = balance_cmd.get<std::string>("--wallet");
         float balance = storageHandler.retrieveBalance(wallet);
         std::cout << "Your current balance: " << balance << std::endl;
+
+    // handle 'delete' subcommand
     } else if (program.is_subcommand_used("delete")) {
         int id = del_cmd.get<int>("id");
         if (storageHandler.deleteTransaction(id) < 0) {
