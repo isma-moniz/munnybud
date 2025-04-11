@@ -54,13 +54,13 @@ public:
     int deleteTransaction(int id);
 
     Transaction& getTransactionById(int id);
-    int getTransactionsByCategory(const std::string& category, std::vector<Transaction>& result);
-    int getTransactionsByWallet(const std::string& wallet, std::vector<Transaction>& result);
+    int getTransactionsByCategory(const std::string& category, std::unordered_set<int>& result);
+    int getTransactionsByWallet(const std::string& wallet, std::unordered_set<int>& result);
+    int retrieveDailyTransactions(const std::string& date, std::unordered_set<int> &result);
+    int retrieveWeeklyTransactions(const std::string& date, std::unordered_set<int> &result);
+    int retrieveMonthlyTransactions(const std::string& date, std::unordered_set<int> &result);
 
-    int retrieveExpenses(const std::string& base_date, int range, std::vector<Transaction>& result);
-    int retrieveDailyExpenses(const std::string& date, std::vector<Transaction>& result);
-    int retrieveWeeklyExpenses(const std::string& date, std::vector<Transaction>& result);
-    int retrieveMonthlyExpenses(const std::string& date, std::vector<Transaction>& result);
+    int retrieveTransactions(const std::string& base_date, int range, const std::string& wallet, const std::string& category, std::vector<Transaction>& result);
 
     float retrieveBalance(const std::string& wallet);
     int updateBalance(const std::string& wallet, int amount);

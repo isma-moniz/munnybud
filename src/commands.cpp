@@ -36,6 +36,7 @@ int handleQuickInput(int argc, char* argv[]) {
     add_cmd.add_argument("-d", "--date")
         .help("Date of the transaction")
         .default_value(getCurrentDate());
+
     add_cmd.add_argument("-w", "--wallet")
         .help("Wallet to charge expense from")
         .default_value(std::string("default"));
@@ -50,7 +51,7 @@ int handleQuickInput(int argc, char* argv[]) {
     argparse::ArgumentParser view_cmd("view");
     view_cmd.add_argument("-d", "--date")
         .help("The base date of the transactions you want to consult. Default is today.")
-        .default_value(getCurrentDate());
+        .default_value(std::string("")); // this will get replaced with the current date if no other filters are used
 
     view_cmd.add_argument("-r", "--range")
         .help("The range in days of the transactions to show. 1 will show the base day only, 2 will show week, 3 will show month")
@@ -59,11 +60,11 @@ int handleQuickInput(int argc, char* argv[]) {
 
     view_cmd.add_argument("-c", "--category")
         .help("Use this to filter results by a certain category.")
-        .default_value(std::string("no"));
+        .default_value(std::string(""));
 
     view_cmd.add_argument("-w", "--wallet")
         .help("Use this to filter results by a certain wallet")
-        .default_value(std::string("no"));
+        .default_value(std::string(""));
 
     view_cmd.add_argument("-g", "--group")
         .help("Use this to group the results. They are grouped by date by default, but you can also group by category or wallet")
@@ -139,12 +140,12 @@ int handleQuickInput(int argc, char* argv[]) {
         std::vector<Transaction> result;
         std::vector<std::string> filters{wallet, category};
 
-        if (storageHandler.retrieveExpenses(date, rng, result) < 0) {
+        if (storageHandler.retrieveTransactions(date, rng, wallet, category, result) < 0) {
             std::cout << "No expenses made in specified range.\n";
             return -1;
         }
 
-        printResults(result, filters, groupBy);
+        printResults(result, groupBy);
     } else if (program.is_subcommand_used("balance")) {
         std::string wallet = balance_cmd.get<std::string>("--wallet");
         float balance = storageHandler.retrieveBalance(wallet);

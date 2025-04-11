@@ -2,12 +2,8 @@
 #include <cctype>
 #include <stdexcept>
 
-void printResults(std::vector<Transaction>& results, const std::vector<std::string>& filters, const std::string& groupBy) {
+void printResults(std::vector<Transaction>& results, const std::string& groupBy) {
     std::unordered_map<std::string, std::vector<Transaction>> groupedResults;    
-    if (filters[0] != "no")
-        Transaction::filterByWallet(results, filters[0]);
-    else if (filters[1] != "no")
-        Transaction::filterByCategory(results, filters[1]);
 
     groupedResults = Transaction::groupBy(results, groupBy);
     
