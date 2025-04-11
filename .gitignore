@@ -3,6 +3,7 @@ build/
 
 # personal stuff
 *.json
+insight.md
 
 # documentation
 doc/
