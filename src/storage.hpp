@@ -62,6 +62,8 @@ public:
 
     float retrieveBalance(const std::string& wallet);
     int updateBalance(const std::string& wallet, int amount);
+
+    std::vector<Transaction> getResultsGrouped(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults); 
 };
 
 #endif

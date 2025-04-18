@@ -1,8 +1,8 @@
 #include "interface.hpp"
+#include "utils.hpp"
 #include <cctype>
 #include <stdexcept>
 #include <iostream>
-#include <ncurses.h>
 
 void printResults(std::vector<Transaction>& results) {
     for (const auto& transaction : results) {
@@ -73,20 +73,40 @@ void printGroupedByWallet(const std::unordered_map<std::string, std::vector<Tran
     }
 }
 
-void initInterface() {
+void initInterface(StorageHandler& storageHandler) {
+    WINDOW* transactionsWin;
+    int startx, starty, width, height;
+    int ch;
+
     initscr();
+    cbreak();
 
     keypad(stdscr, TRUE);
-    noecho(); 
-    drawBoxWStr("Munnybud", 10, 20);
+
+    height = 100;
+    width = 100;
+    starty = 2;
+    startx = 2;
+    printw("Press F1 to exit");
     refresh();
+    transactionsWin = createNewWin(height, width, starty, startx);
+    std::unordered_map<std::string, std::vector<Transaction>> transactionMap;
+    storageHandler.retrieveTransactions("2025-01-17", 3, "", "", transactionMap, "date");
+    std::vector<Transaction> transactionLog = storageHandler.getResultsGrouped(transactionMap);
+    for (Transaction& transaction : transactionLog) {
+        mvwprintw(transactionsWin, ++starty, startx, "%d", transaction.amount); 
+    }
+
+    wrefresh(transactionsWin);
     getch();
+
     endwin();
 }
 
 void drawBoxWStr(const std::string& str, int row, int col) {
     // Top border
     move(row, col);
+    attron(COLOR_PAIR(1));
     addch(ACS_ULCORNER);
     for (int i = 0; i < str.length() + 2; i++) {
         addch(ACS_HLINE);
@@ -104,6 +124,22 @@ void drawBoxWStr(const std::string& str, int row, int col) {
     addch(ACS_LLCORNER);
     for (int i = 0; i < str.length() + 2; i++) {
         addch(ACS_HLINE);
-    }
+    }    
     addch(ACS_LRCORNER);
+    attroff(COLOR_PAIR(1));
+}
+
+WINDOW* createNewWin(int height, int width, int starty, int startx) {
+    WINDOW* local_win;
+
+    local_win = newwin(height, width, starty, startx);
+    box(local_win, 0, 0); //two provided integers are the chartype of the border
+    wrefresh(local_win);
+    return local_win;
+}
+
+void destroyWin(WINDOW* local_win) {
+    wborder(local_win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '); // ugly ass function lmao
+    wrefresh(local_win);
+    delwin(local_win);
 }

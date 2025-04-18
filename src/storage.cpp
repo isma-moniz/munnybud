@@ -569,3 +569,14 @@ wallets["wallets"][wlt] = wallets["wallets"][wlt].get<int>() + amount;
 std::cout << wallets["wallets"][wlt].get<int>() << std::endl;
 return 0;
 }
+
+std::vector<Transaction> StorageHandler::getResultsGrouped(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+    std::vector<Transaction> results;
+    for (const auto& [key, transactions] : groupedResults) {
+        for (const auto& transaction: transactions) {
+            results.push_back(transaction);
+        }
+    }
+    return results;
+}
+

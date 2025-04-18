@@ -9,7 +9,8 @@ int main(int argc, char* argv[]) {
     if (argc>1) {
         return handleQuickInput(argc, argv);
     } else {
-        initInterface(); 
+        StorageHandler storageHandler("../wallets.json", "../transactions.json");
+        initInterface(storageHandler); 
         return 0;
     }
 }
