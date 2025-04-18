@@ -6,8 +6,4 @@ The main goals are, besides obviously getting a grip on myself and my stupid spe
 
 ## Licensing Notice
 
-This project uses the Qt Framework, which is licensed under the GNU Lesser General Public License (LGPL) v3.
-
 You can find the full text of the license [here](LICENSES/LICENSE-LGPL-3.0.txt) or on the [GNU website](https://www.gnu.org/licenses/lgpl-3.0.html).
-
-This application dynamically links to the Qt libraries and complies with the LGPL v3 requirements.

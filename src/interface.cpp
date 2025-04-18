@@ -2,6 +2,7 @@
 #include <cctype>
 #include <stdexcept>
 #include <iostream>
+#include <ncurses.h>
 
 void printResults(std::vector<Transaction>& results) {
     for (const auto& transaction : results) {
@@ -70,4 +71,39 @@ void printGroupedByWallet(const std::unordered_map<std::string, std::vector<Tran
             std::cout << std::endl;
         }
     }
+}
+
+void initInterface() {
+    initscr();
+
+    keypad(stdscr, TRUE);
+    noecho(); 
+    drawBoxWStr("Munnybud", 10, 20);
+    refresh();
+    getch();
+    endwin();
+}
+
+void drawBoxWStr(const std::string& str, int row, int col) {
+    // Top border
+    move(row, col);
+    addch(ACS_ULCORNER);
+    for (int i = 0; i < str.length() + 2; i++) {
+        addch(ACS_HLINE);
+    }
+    addch(ACS_URCORNER);
+
+    // Middle row with text
+    move(row + 1, col);
+    addch(ACS_VLINE);
+    printw(" %s ", str.c_str());
+    addch(ACS_VLINE);
+
+    // Bottom border
+    move(row + 2, col);
+    addch(ACS_LLCORNER);
+    for (int i = 0; i < str.length() + 2; i++) {
+        addch(ACS_HLINE);
+    }
+    addch(ACS_LRCORNER);
 }
