@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <iostream>
 
-void printResults(std::vector<Transaction>& results) {
+void Interface::printResults(std::vector<Transaction>& results) {
     for (const auto& transaction : results) {
         std::cout << "Date: " << transaction.date << '\n';
         std::cout << "ID: " << transaction.id << '\n';
@@ -16,7 +16,7 @@ void printResults(std::vector<Transaction>& results) {
     }
 }
 
-void printResultsGrouped(const std::string& groupBy, const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+void Interface::printResultsGrouped(const std::string& groupBy, const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
     if (groupBy == "date") {
         printGroupedByDate(groupedResults);
     } else if (groupBy == "category") {
@@ -28,7 +28,7 @@ void printResultsGrouped(const std::string& groupBy, const std::unordered_map<st
     }
 }
 
-void printGroupedByDate(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+void Interface::printGroupedByDate(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
     std::cout << "Expenses grouped by date: " << std::endl << std::endl;
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Date: " << key << std::endl << std::endl;
@@ -43,7 +43,7 @@ void printGroupedByDate(const std::unordered_map<std::string, std::vector<Transa
     }
 }
 
-void printGroupedByCategory(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+void Interface::printGroupedByCategory(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
     std::cout << "Expenses grouped by category: " << std::endl;
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Category: " << key << std::endl << std::endl;
@@ -58,7 +58,7 @@ void printGroupedByCategory(const std::unordered_map<std::string, std::vector<Tr
     }
 }
 
-void printGroupedByWallet(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+void Interface::printGroupedByWallet(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
     std::cout << "Expenses grouped by wallet: " << std::endl;
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Wallet: " << key << std::endl << std::endl;
@@ -73,7 +73,7 @@ void printGroupedByWallet(const std::unordered_map<std::string, std::vector<Tran
     }
 }
 
-void initInterface(StorageHandler& storageHandler) {
+void Interface::initInterface(StorageHandler& storageHandler) {
     WINDOW* transactionsWin;
     int startx, starty, width, height;
     int ch;
@@ -100,21 +100,22 @@ void initInterface(StorageHandler& storageHandler) {
     endwin();
 }
 
-void redraw(WINDOW* win) {
+void Interface::redraw(WINDOW* win) {
     wmove(win, 2, 1);
     int maxx = getmaxx(win);
     for (int i = 0; i < maxx - 2; i++) {
         waddch(win, ACS_HLINE);
     }
     mvwprintw(win, 1, 1, "Welcome to munnybud gng");
+    mvwprintw(win, 1, maxx - 2 - 26,"(T)oday | (W)eek | (M)onth");
     wrefresh(win);
 }
 
-void drawTransactionBox(const Transaction& transaction) {
+void Interface::drawTransactionBox(const Transaction& transaction) {
     // TODO 
 }
 
-void drawBoxWStr(const std::string& str, int row, int col) {
+void Interface::drawBoxWStr(const std::string& str, int row, int col) {
     // Top border
     move(row, col);
     attron(COLOR_PAIR(1));
@@ -140,7 +141,7 @@ void drawBoxWStr(const std::string& str, int row, int col) {
     attroff(COLOR_PAIR(1));
 }
 
-WINDOW* createNewWin(int height, int width, int starty, int startx) {
+WINDOW* Interface::createNewWin(int height, int width, int starty, int startx) {
     WINDOW* local_win;
 
     local_win = newwin(height, width, starty, startx);
@@ -149,7 +150,7 @@ WINDOW* createNewWin(int height, int width, int starty, int startx) {
     return local_win;
 }
 
-void destroyWin(WINDOW* local_win) {
+void Interface::destroyWin(WINDOW* local_win) {
     wborder(local_win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '); // ugly ass function lmao
     wrefresh(local_win);
     delwin(local_win);

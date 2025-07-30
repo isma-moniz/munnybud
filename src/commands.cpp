@@ -1,6 +1,5 @@
 #include "commands.hpp"
 #include "utils.hpp"
-#include "interface.hpp"
 #include <ostream>
 
 void setupAddCmd(argparse::ArgumentParser& add_cmd) {
@@ -103,7 +102,7 @@ int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandl
     return 0;
 }
 
-int handleViewCmd(argparse::ArgumentParser& view_cmd, StorageHandler& storageHandler) {
+int handleViewCmd(argparse::ArgumentParser& view_cmd, StorageHandler& storageHandler, Interface& interface) {
     std::string date = view_cmd.get<std::string>("--date");
     int rng = view_cmd.get<int>("--range");
     std::string wallet = view_cmd.get<std::string>("--wallet");
@@ -116,11 +115,11 @@ int handleViewCmd(argparse::ArgumentParser& view_cmd, StorageHandler& storageHan
         return -1;
     }
 
-    printResultsGrouped(groupBy, result);
+    interface.printResultsGrouped(groupBy, result);
     return 0;
 }
 
-int handleQuickInput(int argc, char* argv[]) {
+int handleQuickInput(int argc, char* argv[], Interface& interface) {
     // program root command
     argparse::ArgumentParser program("munnybud");
 
@@ -177,7 +176,7 @@ int handleQuickInput(int argc, char* argv[]) {
 
     // handle 'view' subcommand
     } else if (program.is_subcommand_used("view")) {
-        return handleViewCmd(view_cmd, storageHandler);
+        return handleViewCmd(view_cmd, storageHandler, interface);
     
     // handle 'balance' subcommand
     } else if (program.is_subcommand_used("balance")) {
