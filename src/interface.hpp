@@ -15,7 +15,9 @@ void printGroupedByWallet(const std::unordered_map<std::string, std::vector<Tran
 void printGroupedByDate(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults);
 
 void initInterface(StorageHandler& storageHandler);
+void redraw(WINDOW* win);
 void drawBoxWStr(const std::string& str, int row, int col);
+void drawTransactionBox(const Transaction& transaction);
 WINDOW* createNewWin(int height, int width, int starty, int startx);
 void destroyWin(WINDOW* local_win);
 

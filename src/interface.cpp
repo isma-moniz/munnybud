@@ -1,6 +1,6 @@
 #include "interface.hpp"
-#include "utils.hpp"
 #include <cctype>
+#include <ncurses.h>
 #include <stdexcept>
 #include <iostream>
 
@@ -80,27 +80,38 @@ void initInterface(StorageHandler& storageHandler) {
 
     initscr();
     cbreak();
+    noecho();
+    curs_set(0);
 
     keypad(stdscr, TRUE);
 
-    height = 100;
-    width = 100;
-    starty = 2;
-    startx = 2;
-    printw("Press F1 to exit");
+    height = LINES;
+    width = COLS;
+    starty = 0, startx = 0;
     refresh();
-    transactionsWin = createNewWin(height, width, starty, startx);
-    std::unordered_map<std::string, std::vector<Transaction>> transactionMap;
-    storageHandler.retrieveTransactions("2025-01-17", 3, "", "", transactionMap, "date");
-    std::vector<Transaction> transactionLog = storageHandler.getResultsGrouped(transactionMap);
-    for (Transaction& transaction : transactionLog) {
-        mvwprintw(transactionsWin, ++starty, startx, "%d", transaction.amount); 
+    transactionsWin = createNewWin(height, width, starty, startx); 
+    redraw(transactionsWin); 
+    while((ch = getch()) != KEY_F(1)) {
+        switch(ch) {
+            break;
+        }
     }
 
-    wrefresh(transactionsWin);
-    getch();
-
     endwin();
+}
+
+void redraw(WINDOW* win) {
+    wmove(win, 2, 1);
+    int maxx = getmaxx(win);
+    for (int i = 0; i < maxx - 2; i++) {
+        waddch(win, ACS_HLINE);
+    }
+    mvwprintw(win, 1, 1, "Welcome to munnybud gng");
+    wrefresh(win);
+}
+
+void drawTransactionBox(const Transaction& transaction) {
+    // TODO 
 }
 
 void drawBoxWStr(const std::string& str, int row, int col) {

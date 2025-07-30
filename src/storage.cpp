@@ -129,18 +129,18 @@ return data;
 *
 */
 void StorageHandler::loadData() {
-wallets = loadFile(walletFile);
-transactions = loadFile(transactionFile);
+    wallets = loadFile(walletFile);
+    transactions = loadFile(transactionFile);
 
-if (!transactions.contains("metadata") ||
-    !transactions["metadata"].contains("currentID"))
-    throw std::runtime_error("Transaction metadata invalid.");
-Transaction::currentID = transactions["metadata"]["currentID"];
+    if (!transactions.contains("metadata") ||
+        !transactions["metadata"].contains("currentID"))
+        throw std::runtime_error("Transaction metadata invalid.");
+    Transaction::currentID = transactions["metadata"]["currentID"];
 
-if (!wallets.contains("default_wallet"))
-    throw std::runtime_error("Could not find default wallet.");
+    if (!wallets.contains("default_wallet"))
+        throw std::runtime_error("Could not find default wallet.");
 
-StorageHandler::default_wallet = wallets["default_wallet"];
+    StorageHandler::default_wallet = wallets["default_wallet"];
 }
 
 /**

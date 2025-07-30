@@ -1,9 +1,7 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 4.0.0)
 project(munnybud)
 
 set(CMAKE_CXX_STANDARD 20)
-
-set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP OFF)
 
 find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
