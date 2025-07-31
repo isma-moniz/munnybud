@@ -74,10 +74,11 @@ void Interface::printGroupedByWallet(const std::unordered_map<std::string, std::
 }
 
 void Interface::initInterface(StorageHandler& storageHandler) {
+    this->storageHandler = storageHandler;
+
     WINDOW* transactionsWin;
     int startx, starty, width, height;
     int ch;
-
     initscr();
     cbreak();
     noecho();
@@ -90,10 +91,27 @@ void Interface::initInterface(StorageHandler& storageHandler) {
     starty = 0, startx = 0;
     refresh();
     transactionsWin = createNewWin(height, width, starty, startx); 
+    appState = view_today; 
     redraw(transactionsWin); 
     while((ch = getch()) != KEY_F(1)) {
         switch(ch) {
-            break;
+            case 'f':
+            case 'F':
+                appState = view_today;
+                redraw(transactionsWin);
+                break;
+            case 'w':
+            case 'W':
+                appState = view_week;
+                redraw(transactionsWin);
+                break;
+            case 'm':
+            case 'M':
+                appState = view_month;
+                redraw(transactionsWin);
+                break;
+            default:
+                break;
         }
     }
 
@@ -108,7 +126,31 @@ void Interface::redraw(WINDOW* win) {
     }
     mvwprintw(win, 1, 1, "Welcome to munnybud gng");
     mvwprintw(win, 1, maxx - 2 - 26,"(T)oday | (W)eek | (M)onth");
+    switch(appState) {
+        case view_today:
+            storageHandler.retrieveTransactions("", 1, "", "", transactionMap, "date");
+            transactionVec = storageHandler.getResultsGrouped(transactionMap);
+            displayTransactions();
+            break;
+        case view_week:
+            storageHandler.retrieveTransactions("", 2, "", "", transactionMap, "date");
+            transactionVec = storageHandler.getResultsGrouped(transactionMap);
+            displayTransactions();
+            break;
+        case view_month:
+            storageHandler.retrieveTransactions("", 3, "", "", transactionMap, "date");
+            transactionVec = storageHandler.getResultsGrouped(transactionMap);
+            displayTransactions();
+            break;
+        default:
+            break;
+    }
+
     wrefresh(win);
+}
+
+void displayTransactions() {
+    
 }
 
 void Interface::drawTransactionBox(const Transaction& transaction) {

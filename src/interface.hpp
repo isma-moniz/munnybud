@@ -8,6 +8,12 @@
 #include <vector>
 #include <unordered_map>
 
+enum AppState {
+    view_today,
+    view_week,
+    view_month
+};
+
 class Interface {
 private:
     // quick command mode
@@ -18,12 +24,18 @@ private:
     // curses mode 
     int width, height;
     WINDOW* mainWindow;
+    AppState appState;
+
+    StorageHandler& storageHandler;
+    std::vector<Transaction> transactionVec;
+    std::unordered_map<std::string, std::vector<Transaction>> transactionMap;
 
     void redraw(WINDOW* win);
     void drawBoxWStr(const std::string& str, int row, int col);
     void drawTransactionBox(const Transaction& transaction);
     WINDOW* createNewWin(int height, int width, int starty, int startx);
     void destroyWin(WINDOW* local_win);
+    void displayTransactions();
 public:
     // quick command mode
     void printResults(std::vector<Transaction>& results);
