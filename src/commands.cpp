@@ -3,7 +3,7 @@
 #include <ostream>
 
 void setupAddCmd(argparse::ArgumentParser& add_cmd) {
-    add_cmd.add_argument("transaction")
+    add_cmd.add_argument("transaction_type")
         .help("Whether it's an expense or an income")
         .action([](const std::string& op) {
             if (op != "expense" && op != "income") {
@@ -30,7 +30,7 @@ void setupAddCmd(argparse::ArgumentParser& add_cmd) {
 
     add_cmd.add_argument("-w", "--wallet")
         .help("Wallet to charge expense from")
-        .default_value(std::string("default"));
+        .default_value("");
     return;
 }
 
@@ -76,6 +76,7 @@ int handleSetupCmd() {
     std::cout << "Done!" << std::endl;
     return 0;
 }
+#include <chrono>
 
 int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandler) {
     std::string transaction = add_cmd.get<std::string>("transaction");
@@ -85,15 +86,15 @@ int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandl
     std::string label = add_cmd.get<std::string>("--label");
     std::string date = add_cmd.get<std::string>("--date");
     std::string wallet = add_cmd.get<std::string>("--wallet");
+	if (wallet.empty()) wallet = "default";
+
     if (transaction == "expense") {
-        Transaction tx(-amount, category, label, wallet);
-        tx.date = date;
-        if (storageHandler.storeTransaction(tx) < 0)
+        Transaction tx(-amount, category, label, wallet, date);
+        if (storageHandler.storeTransaction(Transaction(-amount, category, label, wallet, date)) < 0)
             return -1;
     } else {
-        Transaction tx(amount, category, label, wallet);
-        tx.date = date;
-        if (storageHandler.storeTransaction(tx) < 0)
+        Transaction tx(amount, category, label, wallet, date);
+        if (storageHandler.storeTransaction(Transaction(amount, category, label, wallet, date)) < 0)
             return -1;
     }
 
@@ -120,6 +121,8 @@ int handleViewCmd(argparse::ArgumentParser& view_cmd, StorageHandler& storageHan
 }
 
 int handleQuickInput(int argc, char* argv[], Interface& interface) {
+    
+	StorageHandler storageHandler("../wallets.json", "../transactions.json");
     // program root command
     argparse::ArgumentParser program("munnybud");
 
@@ -144,7 +147,7 @@ int handleQuickInput(int argc, char* argv[], Interface& interface) {
     argparse::ArgumentParser balance_cmd("balance");
     balance_cmd.add_argument("-w", "--wallet")
         .help("The wallet you want to consult")
-        .default_value(std::string("default"));
+        .default_value("");
     
     // add subparsers to program root
     program.add_subparser(balance_cmd);
@@ -165,10 +168,9 @@ int handleQuickInput(int argc, char* argv[], Interface& interface) {
     // handle 'setup' subcommand
     if (program.is_subcommand_used("setup")) {
         return handleSetupCmd(); 
-    }
-    
-    // other subcommands require a storageHandler to be constructed!
-    StorageHandler storageHandler("../wallets.json", "../transactions.json");
+    } 
+
+	storageHandler.loadData();
 
     // handle 'add' subcommand
     if (program.is_subcommand_used("add")) {

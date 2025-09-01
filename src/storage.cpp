@@ -8,7 +8,6 @@
 
 #include "storage.hpp"
 #include "utils.hpp"
-#include <chrono>
 #include <regex>
 #include <stdexcept>
 #include <fstream>
@@ -16,28 +15,31 @@
 
 /**
 * @brief Sets up a new transaction json file with the proper structure.
-If, say, the wallet index returns almost every transaction because most transactions belong to the same wallet, then the benefit of intersecting that index is minimal. In that case, you might end up with a performance similar to filtering, or even a slight overhead if you perform multiple intersections.*
+* If, say, the wallet index returns almost every transaction because most transactions belong to the same wallet, 
+* then the benefit of intersecting that index is minimal. In that case, you might end up with a performance similar 
+* to filtering, or even a slight overhead if you perform multiple intersections.
+*
 * @param transactionFile the path to the transaction file
 * @return int -1 for error, 0 for success
 */
 int StorageHandler::setupTransactions(const std::string &transactionFile) {
-std::ofstream file(transactionFile);
-if (!file.is_open()) {
-    std::cerr << "Error opening file for writing: " << transactionFile << " ."
-            << std::endl;
-    return -1;
-}
+	std::ofstream file(transactionFile);
+	if (!file.is_open()) {
+		std::cerr << "Error opening file for writing: " << transactionFile << " ."
+				<< std::endl;
+		return -1;
+	}
 
-json data = {{"metadata", {{"currentID", 0}}}, {"data", json::object()}};
+	json data = {{"metadata", {{"currentID", 0}}}, {"data", json::object()}};
 
-file << data.dump(4);
-if (!file) {
-    std::cerr << "Error writing to file: " << transactionFile << std::endl;
-    return -1;
-}
+	file << data.dump(4);
+	if (!file) {
+		std::cerr << "Error writing to file: " << transactionFile << std::endl;
+		return -1;
+	}
 
-file.close();
-return 0;
+	file.close();
+	return 0;
 }
 
 /**
@@ -48,53 +50,53 @@ return 0;
 * @return int -1 for error, 0 for success
 */
 int StorageHandler::setupWallets(const std::string &walletFile) {
-std::ofstream file(walletFile);
-if (!file.is_open()) {
-    std::cerr << "Error opening file for writing: " << walletFile << " ."
-            << std::endl;
-    return -1;
-}
+	std::ofstream file(walletFile);
+	if (!file.is_open()) {
+		std::cerr << "Error opening file for writing: " << walletFile << " ."
+				<< std::endl;
+		return -1;
+	}
 
-json data = json::object();
-float walletMoney;
-std::string walletName;
+	json data = json::object();
+	float walletMoney;
+	std::string walletName;
 
-while (true) {
-    std::cout << "Enter name of default wallet (leave empty for 'default'): ";
-    std::getline(std::cin, walletName);
-    if (walletName.empty()) {
-    walletName = "default";
-    break;
-    }
+	while (true) {
+		std::cout << "Enter name of default wallet (leave empty for 'default'): ";
+		std::getline(std::cin, walletName);
+		if (walletName.empty()) {
+		walletName = "default";
+		break;
+		}
 
-    std::regex alphaNum("^[a-zA-Z0-9]+$");
-    if (std::regex_match(walletName, alphaNum)) {
-    break;
-    } else {
-    std::cout << "Invalid wallet name. Must only contain alphanumeric "
-                "characters.\n";
-    }
-}
+		std::regex alphaNum("^[a-zA-Z0-9]+$");
+		if (std::regex_match(walletName, alphaNum)) {
+		break;
+		} else {
+		std::cout << "Invalid wallet name. Must only contain alphanumeric "
+					"characters.\n";
+		}
+	}
 
-std::cout << "Enter amount of money in default wallet: ";
-while (!(std::cin >> walletMoney)) {
-    std::cin.clear();
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max());
-    std::cout << "Invalid amount. Please enter a number: ";
-}
+	std::cout << "Enter amount of money in default wallet: ";
+	while (!(std::cin >> walletMoney)) {
+		std::cin.clear();
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max());
+		std::cout << "Invalid amount. Please enter a number: ";
+	}
 
-data["default_wallet"] = walletName;
-data["wallets"] = json::object();
-data["wallets"][walletName] = static_cast<int>(std::round(walletMoney * 100));
+	data["default_wallet"] = walletName;
+	data["wallets"] = json::object();
+	data["wallets"][walletName] = static_cast<int>(std::round(walletMoney * 100));
 
-file << data.dump(4);
-if (!file) {
-    std::cerr << "Error writing to file: " << walletFile << std::endl;
-    return -1;
-}
+	file << data.dump(4);
+	if (!file) {
+		std::cerr << "Error writing to file: " << walletFile << std::endl;
+		return -1;
+	}
 
-file.close();
-return 0;
+	file.close();
+	return 0;
 }
 
 /**
@@ -183,7 +185,6 @@ return (storeFile(walletFile, wallets) +
 StorageHandler::StorageHandler(const std::string &_walletFile,
                             const std::string &_transactionFile)
     : walletFile(_walletFile), transactionFile(_transactionFile) {
-loadData();
 }
 
 /**
@@ -192,33 +193,33 @@ loadData();
 * @param transaction a Transaction oject to be converted to json
 * @return int -1 on error, 0 on success
 */
-int StorageHandler::storeTransaction(Transaction &transaction) {
-std::string wlt;
-if (transaction.wallet == "default")
-    wlt = StorageHandler::default_wallet;
-else
-    wlt = transaction.wallet;
+int StorageHandler::storeTransaction(const Transaction&& transaction) {
+	std::string wlt;
+	if (transaction.wallet == "default")
+		wlt = StorageHandler::default_wallet;
+	else
+		wlt = transaction.wallet;
 
-// expense in json format
-json jsonTransaction = transaction.toJson();
+	// expense in json format
+	json jsonTransaction = transaction.toJson();
 
-if (updateBalance(wlt, jsonTransaction["amount"]) != 0) {
-    Transaction::currentID--;
-    return -1;
-}
+	if (updateBalance(wlt, jsonTransaction["amount"]) != 0) {
+		Transaction::currentID--;
+		return -1;
+	}
 
-if (!transactions.contains("data") || !transactions["data"].is_object()) {
-    Transaction::currentID--;
-    std::cerr << "Invalid file structure: couldn't find 'data' object.\n";
-    return -1;
-}
+	if (!transactions.contains("data") || !transactions["data"].is_object()) {
+		Transaction::currentID--;
+		std::cerr << "Invalid file structure: couldn't find 'data' object.\n";
+		return -1;
+	}
 
-if (!transactions["data"].contains(transaction.date) ||
-    !transactions["data"][transaction.date].is_array())
-    transactions["data"][transaction.date] = json::array();
-transactions["data"][transaction.date].push_back(jsonTransaction);
-transactions["metadata"]["currentID"] = Transaction::currentID;
-return storeData();
+	if (!transactions["data"].contains(transaction.date) ||
+		!transactions["data"][transaction.date].is_array())
+		transactions["data"][transaction.date] = json::array();
+	transactions["data"][transaction.date].push_back(jsonTransaction);
+	transactions["metadata"]["currentID"] = Transaction::currentID;
+	return storeData();
 }
 
 /**
@@ -532,17 +533,21 @@ return -1;
 * @return float the balance as a float
 */
 float StorageHandler::retrieveBalance(const std::string &wallet) {
-if (!wallets["wallets"].contains(wallet)) {
-    std::cerr << "Error: Wallet " << wallet << " not found.\n";
-    return -1;
-}
+	if (wallet.empty()) {
+		return wallets["wallets"][default_wallet].get<float>() / 100;
+	}
 
-if (!wallets["wallets"][wallet].is_number()) {
-    std::cerr << "Error: Invalid wallet balance.\n";
-    return -1;
-}
+	if (!wallets["wallets"].contains(wallet)) {
+		std::cerr << "Error: Wallet " << wallet << " not found.\n";
+		return -1;
+	}
 
-return wallets["wallets"][wallet].get<float>() / 100;
+	if (!wallets["wallets"][wallet].is_number()) {
+		std::cerr << "Error: Invalid wallet balance.\n";
+		return -1;
+	}
+
+	return wallets["wallets"][wallet].get<float>() / 100;
 }
 
 /**
@@ -553,21 +558,21 @@ return wallets["wallets"][wallet].get<float>() / 100;
 * @return int -1 on error, 0 on success
 */
 int StorageHandler::updateBalance(const std::string &wallet, int amount) {
-std::string wlt;
-if (wallet == "default")
-    wlt = StorageHandler::default_wallet;
-else
-    wlt = wallet;
-if (!wallets["wallets"].contains(wlt)) {
-    std::cerr << "Error: Wallet '" << wlt
-            << "' does not exist. Unable to update wallet balance."
-            << std::endl;
-    return -1;
-}
-std::cout << wallets["wallets"][wlt] << std::endl;
-wallets["wallets"][wlt] = wallets["wallets"][wlt].get<int>() + amount;
-std::cout << wallets["wallets"][wlt].get<int>() << std::endl;
-return 0;
+	std::string wlt;
+	if (wallet == "default")
+		wlt = StorageHandler::default_wallet;
+	else
+		wlt = wallet;
+	if (!wallets["wallets"].contains(wlt)) {
+		std::cerr << "Error: Wallet '" << wlt
+				<< "' does not exist. Unable to update wallet balance."
+				<< std::endl;
+		return -1;
+	}
+	std::cout << wallets["wallets"][wlt] << std::endl;
+	wallets["wallets"][wlt] = wallets["wallets"][wlt].get<int>() + amount;
+	std::cout << wallets["wallets"][wlt].get<int>() << std::endl;
+	return 0;
 }
 
 std::vector<Transaction> StorageHandler::getResultsGrouped(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {

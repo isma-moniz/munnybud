@@ -1,8 +1,9 @@
 #include "transaction.hpp"
 #include "json.hpp"
 
-Transaction::Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt) 
-    : amount(amt), category(cat), description(desc), wallet(wlt) {
+Transaction::Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt,
+		const std::string& date) 
+    : amount(amt), category(cat), description(desc), wallet(wlt), date(date) {
         id = ++Transaction::currentID;
     }
 

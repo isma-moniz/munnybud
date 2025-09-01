@@ -16,7 +16,7 @@ public:
     std::string wallet;
     std::string date;
 
-    Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt);
+    Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt, const std::string& date);
     Transaction(const json& transactionObject);
     json toJson() const;
 };

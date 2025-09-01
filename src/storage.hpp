@@ -31,11 +31,11 @@ private:
     static std::string default_wallet;
     IndexManager idxManager; 
 
-    void loadData();
     json loadFile(const std::string& filePath);
     int storeData();
     int storeFile(const std::string& filePath, json& data);
 public:
+    void loadData();
     void populateIdIdx();
     void populateWalletIdx();
     void populateCategoryIdx();
@@ -46,7 +46,7 @@ public:
     static int setupWallets(const std::string& walletFile);
     static int setupTransactions(const std::string& transactionFile);
     
-    int storeTransaction(Transaction& transaction);
+    int storeTransaction(const Transaction&& transaction);
     int deleteTransaction(int id);
 
     Transaction& getTransactionById(int id);

@@ -26,17 +26,17 @@ private:
     WINDOW* mainWindow;
     AppState appState;
 
-    StorageHandler& storageHandler;
     std::vector<Transaction> transactionVec;
     std::unordered_map<std::string, std::vector<Transaction>> transactionMap;
 
-    void redraw(WINDOW* win);
+    void redraw(WINDOW* win, StorageHandler& storageHandler);
     void drawBoxWStr(const std::string& str, int row, int col);
     void drawTransactionBox(const Transaction& transaction);
     WINDOW* createNewWin(int height, int width, int starty, int startx);
     void destroyWin(WINDOW* local_win);
     void displayTransactions();
 public:
+	Interface() = default;
     // quick command mode
     void printResults(std::vector<Transaction>& results);
     void printResultsGrouped(const std::string& groupBy, const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults); 

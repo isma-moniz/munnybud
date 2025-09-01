@@ -74,8 +74,6 @@ void Interface::printGroupedByWallet(const std::unordered_map<std::string, std::
 }
 
 void Interface::initInterface(StorageHandler& storageHandler) {
-    this->storageHandler = storageHandler;
-
     WINDOW* transactionsWin;
     int startx, starty, width, height;
     int ch;
@@ -92,23 +90,23 @@ void Interface::initInterface(StorageHandler& storageHandler) {
     refresh();
     transactionsWin = createNewWin(height, width, starty, startx); 
     appState = view_today; 
-    redraw(transactionsWin); 
+    redraw(transactionsWin, storageHandler); 
     while((ch = getch()) != KEY_F(1)) {
         switch(ch) {
             case 'f':
             case 'F':
                 appState = view_today;
-                redraw(transactionsWin);
+                redraw(transactionsWin, storageHandler);
                 break;
             case 'w':
             case 'W':
                 appState = view_week;
-                redraw(transactionsWin);
+                redraw(transactionsWin, storageHandler);
                 break;
             case 'm':
             case 'M':
                 appState = view_month;
-                redraw(transactionsWin);
+                redraw(transactionsWin, storageHandler);
                 break;
             default:
                 break;
@@ -118,7 +116,7 @@ void Interface::initInterface(StorageHandler& storageHandler) {
     endwin();
 }
 
-void Interface::redraw(WINDOW* win) {
+void Interface::redraw(WINDOW* win, StorageHandler& storageHandler) {
     wmove(win, 2, 1);
     int maxx = getmaxx(win);
     for (int i = 0; i < maxx - 2; i++) {
@@ -149,7 +147,7 @@ void Interface::redraw(WINDOW* win) {
     wrefresh(win);
 }
 
-void displayTransactions() {
+void Interface::displayTransactions() {
     
 }
 
