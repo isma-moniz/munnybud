@@ -31,6 +31,8 @@ private:
     static std::string default_wallet;
     IndexManager idxManager; 
 
+	std::vector<Transaction> masterTransactions;
+
     json loadFile(const std::string& filePath);
     int storeData();
     int storeFile(const std::string& filePath, json& data);
@@ -46,7 +48,7 @@ public:
     static int setupWallets(const std::string& walletFile);
     static int setupTransactions(const std::string& transactionFile);
     
-    int storeTransaction(const Transaction&& transaction);
+    int addTransaction(const Transaction&& transaction);
     int deleteTransaction(int id);
 
     Transaction& getTransactionById(int id);
@@ -55,6 +57,10 @@ public:
     int retrieveDailyTransactions(const std::string& date, std::unordered_set<int> &result);
     int retrieveWeeklyTransactions(const std::string& date, std::unordered_set<int> &result);
     int retrieveMonthlyTransactions(const std::string& date, std::unordered_set<int> &result);
+
+	int quickRetrieveDailyTransactions(const std::string& date);
+	int quickRetrieveWeeklyTransactions(const std::string& base_date);
+	int quickRetrieveMonthlyTransactions(const std::string& base_date);
 
     int retrieveTransactions(const std::string& base_date, int range, const std::string& wallet, 
         const std::string& category, std::unordered_map<std::string, std::vector<Transaction>>& result,

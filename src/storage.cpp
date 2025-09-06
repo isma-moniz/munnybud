@@ -14,6 +14,18 @@
 #include <iostream>
 
 /**
+* @brief Construct a new Storage Handler:: Storage Handler object, initializing
+* wallet and transaction file paths.
+*
+* @param _walletFile wallet file path
+* @param _transactionFile transaction file path
+*/
+StorageHandler::StorageHandler(const std::string &_walletFile,
+                            const std::string &_transactionFile)
+    : walletFile(_walletFile), transactionFile(_transactionFile) {
+}
+
+/**
 * @brief Sets up a new transaction json file with the proper structure.
 * If, say, the wallet index returns almost every transaction because most transactions belong to the same wallet, 
 * then the benefit of intersecting that index is minimal. In that case, you might end up with a performance similar 
@@ -107,21 +119,21 @@ int StorageHandler::setupWallets(const std::string &walletFile) {
 * @return json - nlohmann::basicjson<> object with the loaded data
 */
 json StorageHandler::loadFile(const std::string &filePath) {
-std::ifstream file(filePath);
-json data;
-if (file.is_open()) {
-    try {
-    data = json::parse(file);
-    } catch (json::parse_error &e) {
-    std::cout << "JSON parse error: " << e.what() << std::endl;
-    throw std::runtime_error("JSON Parse Error");
-    }
-    file.close();
-} else {
-    json data = json::object();
-}
+	std::ifstream file(filePath);
+	json data;
+	if (file.is_open()) {
+		try {
+		data = json::parse(file);
+		} catch (json::parse_error &e) {
+		std::cout << "JSON parse error: " << e.what() << std::endl;
+		throw std::runtime_error("JSON Parse Error");
+		}
+		file.close();
+	} else {
+		json data = json::object();
+	}
 
-return data;
+	return data;
 }
 
 /**
@@ -154,19 +166,19 @@ void StorageHandler::loadData() {
 * @return int -1 on error, 0 for success
 */
 int StorageHandler::storeFile(const std::string &filePath, json &data) {
-std::ofstream file(filePath);
-if (!file.is_open()) {
-    std::cerr << "Error: Could not open file for writing." << std::endl;
-    return -1;
-}
-file << std::setprecision(2) << data.dump(4);
-file.close();
-return 0;
+	std::ofstream file(filePath);
+	if (!file.is_open()) {
+		std::cerr << "Error: Could not open file for writing." << std::endl;
+		return -1;
+	}
+	file << std::setprecision(2) << data.dump(4);
+	file.close();
+	return 0;
 }
 
 /**
 * @brief Wrapper function that calls storeFile for the json data structures in
-* the StorageHandler class.
+* the StorageHandler class, effectively updating both wallets and transactions.
 *
 * @return int -1 on error, 0 on success
 */
@@ -176,24 +188,12 @@ return (storeFile(walletFile, wallets) +
 }
 
 /**
-* @brief Construct a new Storage Handler:: Storage Handler object, initializing
-* wallet and transaction file paths.
-*
-* @param _walletFile wallet file path
-* @param _transactionFile transaction file path
-*/
-StorageHandler::StorageHandler(const std::string &_walletFile,
-                            const std::string &_transactionFile)
-    : walletFile(_walletFile), transactionFile(_transactionFile) {
-}
-
-/**
 * @brief Stores the specified transaction in the transactions json file.
 *
 * @param transaction a Transaction oject to be converted to json
 * @return int -1 on error, 0 on success
 */
-int StorageHandler::storeTransaction(const Transaction&& transaction) {
+int StorageHandler::addTransaction(const Transaction&& transaction) {
 	std::string wlt;
 	if (transaction.wallet == "default")
 		wlt = StorageHandler::default_wallet;
@@ -203,7 +203,7 @@ int StorageHandler::storeTransaction(const Transaction&& transaction) {
 	// expense in json format
 	json jsonTransaction = transaction.toJson();
 
-	if (updateBalance(wlt, jsonTransaction["amount"]) != 0) {
+	if (updateBalance(wlt, transaction.amount) != 0) {
 		Transaction::currentID--;
 		return -1;
 	}
@@ -215,10 +215,13 @@ int StorageHandler::storeTransaction(const Transaction&& transaction) {
 	}
 
 	if (!transactions["data"].contains(transaction.date) ||
-		!transactions["data"][transaction.date].is_array())
+			!transactions["data"][transaction.date].is_array()) {
 		transactions["data"][transaction.date] = json::array();
+	}
+
 	transactions["data"][transaction.date].push_back(jsonTransaction);
 	transactions["metadata"]["currentID"] = Transaction::currentID;
+	
 	return storeData();
 }
 
@@ -351,6 +354,66 @@ int StorageHandler::retrieveDailyTransactions(const std::string &base_date,
 }
 
 /**
+ * @brief Finds transactions with a certain date and stores them in the
+ * master vector. For quick command mode, using indexes is unnecessary overhead.
+ *
+ * @param date - date to query
+ * @return -1 on empty, 0 on success
+ */
+int StorageHandler::quickRetrieveDailyTransactions(const std::string& date) {
+	for (const auto& [date_, txList] : transactions["data"].items()) {
+		if (date_ != date) continue;
+		
+		for (const auto& tx : txList) {
+			masterTransactions.emplace_back(
+				tx.at("amount").get<int>(),
+				tx.at("category").get<std::string>(),
+				tx.at("description").get<std::string>(),
+				tx.at("wallet").get<std::string>(),
+				date_
+			);
+		}
+	}
+	if (masterTransactions.empty()) return -1;
+	
+	return 0;
+}
+
+/**
+ * @brief Finds transactions in the week of the base date and stores them
+ * in the master vector. For quick command mode.
+ *
+ * @param base_date - base_date to query.
+ * @return int -1 on empty, 0 on success
+ */
+int StorageHandler::quickRetrieveWeeklyTransactions(const std::string& base_date) {
+	std::chrono::year_month_day baseDate = parseYMD(base_date);
+	std::chrono::year_month_day startOfWeek, endOfWeek;
+
+	getWeek(baseDate, startOfWeek, endOfWeek);
+	std::string start = formatYMD(startOfWeek);
+	std::string end = formatYMD(endOfWeek);
+
+	for (const auto& [date, txList] : transactions["data"].items()) {
+		if (date > end) break; // this takes advantage of the fact that dates are in order
+		if (date < start) continue;
+
+		for (const auto& tx : txList) {
+			masterTransactions.emplace_back(
+				tx.at("amount").get<int>(),
+				tx.at("category").get<std::string>(),
+				tx.at("description").get<std::string>(),
+				tx.at("wallet").get<std::string>(),
+				date
+			);
+		}
+	}
+	if (masterTransactions.empty()) return -1;
+
+	return 0;
+}
+
+/**
 * @brief Finds transactions in the week of the base date
 * 
 * @param base_date - base_date to query
@@ -381,6 +444,41 @@ int StorageHandler::retrieveWeeklyTransactions(const std::string &base_date,
     if (result.empty())
         return -1;
     return 0;
+}
+
+/**
+ * @brief Finds transactions in the month of the base date and stores them
+ * in the master transactions vector. For quick command mode.
+ *
+ * @param base_date base date to query
+ * @return int -1 on empty, 0 on success
+ */
+int StorageHandler::quickRetrieveMonthlyTransactions(const std::string& base_date) {
+	std::chrono::year_month_day base_ymd = parseYMD(base_date);
+	std::chrono::year_month_day startOfMonth = 
+		base_ymd.year() / base_ymd.month() / std::chrono::day(1);
+	std::chrono::year_month_day endOfMonth = 
+		base_ymd.year() / base_ymd.month() / std::chrono::last;
+	std::string start = formatYMD(startOfMonth);
+	std::string end = formatYMD(endOfMonth);
+
+	for (const auto& [date, txList] : transactions["data"].items()) {
+		if (date > end) break; // this takes advantage of the fact that dates are in order
+		if (date < start) continue;
+
+		for (const auto& tx : txList) {
+			masterTransactions.emplace_back(
+				tx.at("amount").get<int>(),
+				tx.at("category").get<std::string>(),
+				tx.at("description").get<std::string>(),
+				tx.at("wallet").get<std::string>(),
+				date
+			);
+		}
+	}
+	if (masterTransactions.empty()) return -1;
+
+	return 0;
 }
 
 /**

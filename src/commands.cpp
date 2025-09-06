@@ -90,11 +90,11 @@ int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandl
 
     if (transaction == "expense") {
         Transaction tx(-amount, category, label, wallet, date);
-        if (storageHandler.storeTransaction(Transaction(-amount, category, label, wallet, date)) < 0)
+        if (storageHandler.addTransaction(Transaction(-amount, category, label, wallet, date)) < 0)
             return -1;
     } else {
         Transaction tx(amount, category, label, wallet, date);
-        if (storageHandler.storeTransaction(Transaction(amount, category, label, wallet, date)) < 0)
+        if (storageHandler.addTransaction(Transaction(amount, category, label, wallet, date)) < 0)
             return -1;
     }
 
