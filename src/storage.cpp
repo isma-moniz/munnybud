@@ -290,6 +290,31 @@ Transaction& StorageHandler::getTransactionById(int id) {
 }
 
 /**
+ * @brief Finds transactions with a certain wallet and puts them in the masterTransactions
+ * vector. For quick command use.
+ * 
+ * @param wallet - wallet to query
+ * @return -1 on empty or no wallet, 0 on success
+ */
+int StorageHandler::quickGetTransactionsByWallet(const std::string& wallet) {
+	for (const auto& [date, txList] : transactions["data"].items()) {
+		for (const auto& tx : txList) {
+			if (tx.at("wallet").get<std::string>() != wallet) continue;
+
+			masterTransactions.emplace_back(
+				tx.at("amount").get<int>(),
+				tx.at("category").get<std::string>(),
+				tx.at("description").get<std::string>(),
+				tx.at("wallet").get<std::string>(),
+				date
+			);
+		}
+	}
+	if (masterTransactions.empty()) return -1;
+	return 0;
+}
+
+/**
 * @brief Finds transactions with a certain wallet and puts them in the result
 * unordered_set
 *
@@ -309,6 +334,32 @@ int StorageHandler::getTransactionsByWallet(const std::string &wallet,
     if (result.empty())
         return -1;
     return 0;
+}
+
+/**
+ * @brief Finds transactions with a certain category and puts them in masterTransactions vector.
+ * For quick command use.
+ *
+ * @param category - category to query
+ * @return int -1 on empty or no category, 0 on success
+ */
+int StorageHandler::quickGetTransactionsByCategory(const std::string& category) {
+	for (const auto& [date, txList] : transactions["data"].items()) {
+		for (const auto& tx : txList) {
+			if (tx.at("category").get<std::string>() != category) continue;
+
+			masterTransactions.emplace_back(
+				tx.at("amount").get<int>(),
+				tx.at("category").get<std::string>(),
+				tx.at("description").get<std::string>(),
+				tx.at("wallet").get<std::string>(),
+				date
+			);
+		}
+	}
+	if (masterTransactions.empty()) return -1;
+
+	return 0;
 }
 
 /**
@@ -532,7 +583,7 @@ int StorageHandler::retrieveTransactions(const std::string &base_date, int range
 
     std::unordered_set<int> walletTransactions;
     std::unordered_set<int> categoryTransactions;
-    std::unordered_set<int> dateTransactions;
+std::unordered_set<int> dateTransactions;
     std::vector<std::unordered_set<int>> setVec;
     std::string date;
 
@@ -599,6 +650,62 @@ int StorageHandler::retrieveTransactions(const std::string &base_date, int range
         result[extractor(transaction)].push_back(transaction);
     }
     return 0;
+}
+
+int StorageHandler::quickRetrieveTransactions(const std::string& base_date, int range, const std::string& wallet,
+		const std::string& category, std::unordered_map<std::string_view, std::vector<Transaction*>>& result, const std::string& groupBy) {
+	
+	std::function<std::string_view(const Transaction&)> extractor;
+	std::string date;
+	bool walletFilter, dateFilter, catFilter;
+
+	if (groupBy == "date")
+		extractor = [](const Transaction& t) { return t.date; };
+	else if (groupBy == "category")
+		extractor = [](const Transaction& t) { return t.category; };
+	else if (groupBy == "wallet")
+		extractor = [](const Transaction& t) { return t.wallet; };
+	else
+		throw std::invalid_argument("Invalid groupBy parameter. Must be 'date', 'category' or 'wallet'");
+
+	if (base_date.empty() && wallet.empty() && category.empty()) {
+		date = getCurrentDate();
+		switch(range) {
+			case 1:
+				quickRetrieveDailyTransactions(date);
+				break;
+			case 2:
+				quickRetrieveWeeklyTransactions(date);
+				break;
+			case 3:
+				quickRetrieveMonthlyTransactions(date);
+				break;
+			default:
+				break;
+		}
+		// TODO: unordered_map rehashing gets expensive. 
+		// research other optimizations and heuristics.
+		result.reserve(masterTransactions.size()/AVG_TRANSACTIONS_PER_DAY);
+		for (Transaction& transaction : masterTransactions) {
+			std::string_view key = extractor(transaction);
+			result[key].reserve(AVG_TRANSACTIONS_PER_DAY); // let's estimate the average person does 5 transactions per day
+			result[key].push_back(&transaction);
+		}
+		return 0;
+	}
+	
+	if (!base_date.empty()) {
+		// immediately fetch on date
+	} else {
+		// if range is used, fetch current date, then fetch on date.
+		// else the fact we got here means we have one of the other filters. ignore date completely
+	}	
+}
+
+int StorageHandler::filterByCategory(const std::string& category) {
+	auto it = std::remove_if(masterTransactions.begin(), masterTransactions.end(),
+			[&](const Transaction& t) { return t.category != category; });
+	masterTransactions.erase(it, masterTransactions.end());
 }
 
 // TODO: this function has to be redone with the indexing system. MAYBE NOT!

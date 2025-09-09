@@ -11,10 +11,13 @@
 #include "indexmanager.hpp"
 
 #include <string>
+#include <string_view>
 #include "json.hpp"
 #include <vector>
 #include <ctime>
 
+#define AVG_TRANSACTIONS_PER_DAY 5
+#define AVG_TRANSACTIONS_PER_GROUP 5
 using json = nlohmann::json;
 
 /**
@@ -58,9 +61,17 @@ public:
     int retrieveWeeklyTransactions(const std::string& date, std::unordered_set<int> &result);
     int retrieveMonthlyTransactions(const std::string& date, std::unordered_set<int> &result);
 
+	int quickGetTransactionsByCategory(const std::string& category);
+	int quickGetTransactionsByWallet(const std::string& wallet);
 	int quickRetrieveDailyTransactions(const std::string& date);
 	int quickRetrieveWeeklyTransactions(const std::string& base_date);
 	int quickRetrieveMonthlyTransactions(const std::string& base_date);
+
+	int filterByCategory(const std::string& category);
+
+	int quickRetrieveTransactions(const std::string& base_date, int range, const std::string& wallet,
+			const std::string& category, std::unordered_map<std::string_view, std::vector<Transaction*>>& result,
+			const std::string& groupBy);
 
     int retrieveTransactions(const std::string& base_date, int range, const std::string& wallet, 
         const std::string& category, std::unordered_map<std::string, std::vector<Transaction>>& result,
