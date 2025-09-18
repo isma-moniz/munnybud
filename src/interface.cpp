@@ -16,7 +16,7 @@ void Interface::printResults(std::vector<Transaction>& results) {
     }
 }
 
-void Interface::printResultsGrouped(const std::string& groupBy, const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+void Interface::printResultsGrouped(const std::string& groupBy, const std::unordered_map<std::string_view, std::vector<Transaction*>>& groupedResults) {
     if (groupBy == "date") {
         printGroupedByDate(groupedResults);
     } else if (groupBy == "category") {
@@ -28,46 +28,46 @@ void Interface::printResultsGrouped(const std::string& groupBy, const std::unord
     }
 }
 
-void Interface::printGroupedByDate(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+void Interface::printGroupedByDate(const std::unordered_map<std::string_view, std::vector<Transaction*>>& groupedResults) {
     std::cout << "Expenses grouped by date: " << std::endl << std::endl;
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Date: " << key << std::endl << std::endl;
         for (const auto& transaction : transactions) {
-            std::cout << "ID: " << transaction.id << std::endl;
-            std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction.amount / 100.0 << std::endl;
-            std::cout << "Category: " << transaction.category << std::endl;
-            std::cout << "Description: " << transaction.description << std::endl;
-            std::cout << "Wallet: " << transaction.wallet << std::endl;
+            std::cout << "ID: " << transaction->id << std::endl;
+            std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction->amount / 100.0 << std::endl;
+            std::cout << "Category: " << transaction->category << std::endl;
+            std::cout << "Description: " << transaction->description << std::endl;
+            std::cout << "Wallet: " << transaction->wallet << std::endl;
             std::cout << std::endl;
         }
     }
 }
 
-void Interface::printGroupedByCategory(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+void Interface::printGroupedByCategory(const std::unordered_map<std::string_view, std::vector<Transaction*>>& groupedResults) {
     std::cout << "Expenses grouped by category: " << std::endl;
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Category: " << key << std::endl << std::endl;
         for (const auto& transaction : transactions) {
-            std::cout << "ID: " << transaction.id << std::endl;
-            std::cout << "Date: " << transaction.date << std::endl;
-            std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction.amount / 100.0 << std::endl;
-            std::cout << "Description: " << transaction.description << std::endl;
-            std::cout << "Wallet: " << transaction.wallet << std::endl;
+            std::cout << "ID: " << transaction->id << std::endl;
+            std::cout << "Date: " << transaction->date << std::endl;
+            std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction->amount / 100.0 << std::endl;
+            std::cout << "Description: " << transaction->description << std::endl;
+            std::cout << "Wallet: " << transaction->wallet << std::endl;
             std::cout << std::endl;
         }
     }
 }
 
-void Interface::printGroupedByWallet(const std::unordered_map<std::string, std::vector<Transaction>>& groupedResults) {
+void Interface::printGroupedByWallet(const std::unordered_map<std::string_view, std::vector<Transaction*>>& groupedResults) {
     std::cout << "Expenses grouped by wallet: " << std::endl;
     for (const auto& [key, transactions] : groupedResults) {
         std::cout << "Wallet: " << key << std::endl << std::endl;
         for (const auto& transaction : transactions) {
-            std::cout << "ID: " << transaction.id << std::endl;
-            std::cout << "Date: " << transaction.date << std::endl;
-            std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction.amount / 100.0 << std::endl;
-            std::cout << "Description: " << transaction.description << std::endl;
-            std::cout << "Category: " << transaction.category << std::endl;
+            std::cout << "ID: " << transaction->id << std::endl;
+            std::cout << "Date: " << transaction->date << std::endl;
+            std::cout << "Amount: " << std::fixed << std::setprecision(2) << transaction->amount / 100.0 << std::endl;
+            std::cout << "Description: " << transaction->description << std::endl;
+            std::cout << "Category: " << transaction->category << std::endl;
             std::cout << std::endl;
         }
     }

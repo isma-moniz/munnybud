@@ -1,4 +1,5 @@
 #include "commands.hpp"
+#include <string_view>
 #include "utils.hpp"
 #include <ostream>
 
@@ -41,7 +42,8 @@ void setupViewCmd(argparse::ArgumentParser& view_cmd) {
 
     view_cmd.add_argument("-r", "--range")
         .help("The range in days of the transactions to show. 1 will show the base day only, 2 will show week, 3 will show month")
-        .default_value(1)
+        .default_value(0) // silent 0 to know if user explicitly used the argument or not.
+						  // will be treated as 1 in most cases.
         .scan<'i', int>();
 
     view_cmd.add_argument("-c", "--category")
@@ -79,7 +81,7 @@ int handleSetupCmd() {
 #include <chrono>
 
 int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandler) {
-    std::string transaction = add_cmd.get<std::string>("transaction");
+    std::string transaction = add_cmd.get<std::string>("transaction_type");
     float amountFloat = add_cmd.get<float>("amount");
     int amount = static_cast<int>(std::round(amountFloat * 100));
     std::string category = add_cmd.get<std::string>("--category");
@@ -89,11 +91,9 @@ int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandl
 	if (wallet.empty()) wallet = "default";
 
     if (transaction == "expense") {
-        Transaction tx(-amount, category, label, wallet, date);
         if (storageHandler.addTransaction(Transaction(-amount, category, label, wallet, date)) < 0)
             return -1;
     } else {
-        Transaction tx(amount, category, label, wallet, date);
         if (storageHandler.addTransaction(Transaction(amount, category, label, wallet, date)) < 0)
             return -1;
     }
@@ -109,9 +109,9 @@ int handleViewCmd(argparse::ArgumentParser& view_cmd, StorageHandler& storageHan
     std::string wallet = view_cmd.get<std::string>("--wallet");
     std::string category = view_cmd.get<std::string>("--category");
     std::string groupBy = view_cmd.get<std::string>("--group");
-    std::unordered_map<std::string, std::vector<Transaction>> result;
+    std::unordered_map<std::string_view, std::vector<Transaction*>> result;
 
-    if (storageHandler.retrieveTransactions(date, rng, wallet, category, result, groupBy) < 0)   {
+    if (storageHandler.quickRetrieveTransactions(date, rng, wallet, category, result, groupBy) < 0)   {
         std::cout << "No expenses made in specified range.\n";
         return -1;
     }

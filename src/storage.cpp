@@ -143,6 +143,7 @@ json StorageHandler::loadFile(const std::string &filePath) {
 *
 */
 void StorageHandler::loadData() {
+	// TODO: maybe there is a way to "move" the data instead of copying it?
     wallets = loadFile(walletFile);
     transactions = loadFile(transactionFile);
 
@@ -150,7 +151,7 @@ void StorageHandler::loadData() {
         !transactions["metadata"].contains("currentID"))
         throw std::runtime_error("Transaction metadata invalid.");
     Transaction::currentID = transactions["metadata"]["currentID"];
-
+	
     if (!wallets.contains("default_wallet"))
         throw std::runtime_error("Could not find default wallet.");
 
@@ -209,8 +210,8 @@ int StorageHandler::addTransaction(const Transaction&& transaction) {
 	}
 
 	if (!transactions.contains("data") || !transactions["data"].is_object()) {
-		Transaction::currentID--;
 		std::cerr << "Invalid file structure: couldn't find 'data' object.\n";
+		Transaction::currentID--;
 		return -1;
 	}
 
@@ -306,7 +307,8 @@ int StorageHandler::quickGetTransactionsByWallet(const std::string& wallet) {
 				tx.at("category").get<std::string>(),
 				tx.at("description").get<std::string>(),
 				tx.at("wallet").get<std::string>(),
-				date
+				date,
+				tx.at("id").get<int>()
 			);
 		}
 	}
@@ -353,7 +355,8 @@ int StorageHandler::quickGetTransactionsByCategory(const std::string& category) 
 				tx.at("category").get<std::string>(),
 				tx.at("description").get<std::string>(),
 				tx.at("wallet").get<std::string>(),
-				date
+				date,
+				tx.at("id").get<int>()
 			);
 		}
 	}
@@ -421,7 +424,8 @@ int StorageHandler::quickRetrieveDailyTransactions(const std::string& date) {
 				tx.at("category").get<std::string>(),
 				tx.at("description").get<std::string>(),
 				tx.at("wallet").get<std::string>(),
-				date_
+				date_,
+				tx.at("id").get<int>()
 			);
 		}
 	}
@@ -455,7 +459,8 @@ int StorageHandler::quickRetrieveWeeklyTransactions(const std::string& base_date
 				tx.at("category").get<std::string>(),
 				tx.at("description").get<std::string>(),
 				tx.at("wallet").get<std::string>(),
-				date
+				date,
+				tx.at("id").get<int>()
 			);
 		}
 	}
@@ -523,7 +528,8 @@ int StorageHandler::quickRetrieveMonthlyTransactions(const std::string& base_dat
 				tx.at("category").get<std::string>(),
 				tx.at("description").get<std::string>(),
 				tx.at("wallet").get<std::string>(),
-				date
+				date,
+				tx.at("id").get<int>()
 			);
 		}
 	}
@@ -656,49 +662,126 @@ int StorageHandler::quickRetrieveTransactions(const std::string& base_date, int 
 		const std::string& category, std::unordered_map<std::string_view, std::vector<Transaction*>>& result, const std::string& groupBy) {
 	
 	std::function<std::string_view(const Transaction&)> extractor;
-	std::string date;
-	bool walletFilter, dateFilter, catFilter;
-
-	if (groupBy == "date")
+	std::string current_date = getCurrentDate();
+	
+	//TODO: it's stupid to pass around strings in these internal functions as arguments.
+	//just make an ENUM.
+	if (groupBy == "date") {
 		extractor = [](const Transaction& t) { return t.date; };
-	else if (groupBy == "category")
+		result.reserve(masterTransactions.size()/TRANSACTIONS_PER_DAY_LOW_ESTIMATE);
+	} else if (groupBy == "category") {
 		extractor = [](const Transaction& t) { return t.category; };
-	else if (groupBy == "wallet")
+		result.reserve(AVG_CAT_ESTIMATE);
+	} else if (groupBy == "wallet") {
 		extractor = [](const Transaction& t) { return t.wallet; };
-	else
+		result.reserve(AVG_WALLET_ESTIMATE);
+	} else
 		throw std::invalid_argument("Invalid groupBy parameter. Must be 'date', 'category' or 'wallet'");
-
+	// no filters
 	if (base_date.empty() && wallet.empty() && category.empty()) {
-		date = getCurrentDate();
 		switch(range) {
+			case 0:
 			case 1:
-				quickRetrieveDailyTransactions(date);
+				quickRetrieveDailyTransactions(current_date);
 				break;
 			case 2:
-				quickRetrieveWeeklyTransactions(date);
+				quickRetrieveWeeklyTransactions(current_date);
 				break;
 			case 3:
-				quickRetrieveMonthlyTransactions(date);
+				quickRetrieveMonthlyTransactions(current_date);
 				break;
 			default:
-				break;
+				throw std::invalid_argument("Invalid range parameter. Must be 1, 2 or 3");
 		}
 		// TODO: unordered_map rehashing gets expensive. 
 		// research other optimizations and heuristics.
-		result.reserve(masterTransactions.size()/AVG_TRANSACTIONS_PER_DAY);
 		for (Transaction& transaction : masterTransactions) {
 			std::string_view key = extractor(transaction);
-			result[key].reserve(AVG_TRANSACTIONS_PER_DAY); // let's estimate the average person does 5 transactions per day
+			result[key].reserve(TRANSACTIONS_PER_DAY_HIGH_ESTIMATE);
 			result[key].push_back(&transaction);
 		}
+		if (result.empty()) return -1;
 		return 0;
 	}
 	
+	// with filters
 	if (!base_date.empty()) {
 		// immediately fetch on date
+		switch (range) {
+			case 0:
+			case 1:
+				quickRetrieveDailyTransactions(base_date);
+				break;
+			case 2:
+				quickRetrieveWeeklyTransactions(base_date);
+				break;
+			case 3:
+				quickRetrieveMonthlyTransactions(base_date);
+				break;
+			default:	
+				throw std::invalid_argument("Invalid range parameter. Must be 1, 2 or 3");
+		}
+		
+		for (Transaction& t : masterTransactions) {
+			std::string_view key = extractor(t);
+			// check for filters
+			if (!category.empty() && (t.category != category)) continue;
+			if (!wallet.empty() && (t.wallet != wallet)) continue;
+			// not reserving here, unless for date grouping.
+			// just letting the vector do its job. TODO: maybe find some heuristic.
+			result[key].reserve(TRANSACTIONS_PER_DAY_HIGH_ESTIMATE);
+			result[key].push_back(&t);
+		}
+		if (result.empty()) return -1;
+		return 0;
 	} else {
-		// if range is used, fetch current date, then fetch on date.
-		// else the fact we got here means we have one of the other filters. ignore date completely
+		if (range > 0) {
+			switch (range) {
+				case 1:
+					quickRetrieveDailyTransactions(current_date);
+					break;
+				case 2:
+					quickRetrieveWeeklyTransactions(current_date);
+					break;
+				case 3:
+					quickRetrieveMonthlyTransactions(current_date);
+					break;
+				default:
+					throw std::invalid_argument("Invalid range parameter. Must be 1, 2 or 3");
+			}
+
+			for (Transaction& t : masterTransactions) {
+				std::string_view key = extractor(t);
+				
+				if (!category.empty() && (t.category != category)) continue;
+				if (!wallet.empty() && (t.wallet != wallet)) continue;
+
+				result[key].reserve(TRANSACTIONS_PER_DAY_HIGH_ESTIMATE);
+				result[key].push_back(&t);
+			}
+		} else {
+			if (!wallet.empty()) {
+				quickGetTransactionsByWallet(wallet);
+			} else {
+				quickGetTransactionsByCategory(category);
+
+				for (Transaction& t : masterTransactions) {
+					std::string_view key = extractor(t);
+					result[key].reserve(TRANSACTIONS_PER_DAY_HIGH_ESTIMATE);
+					result[key].push_back(&t);
+				}
+				if (result.empty()) return -1;
+				return 0;
+			}
+			for (Transaction& t : masterTransactions) {
+				std::string_view key = extractor(t);
+				if (!category.empty() && (t.category != category)) continue;
+				result[key].reserve(TRANSACTIONS_PER_DAY_HIGH_ESTIMATE);
+				result[key].push_back(&t);
+			}
+		}
+		if (result.empty()) return -1;
+		return 0;
 	}	
 }
 

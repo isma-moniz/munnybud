@@ -2,10 +2,13 @@
 #include "json.hpp"
 
 Transaction::Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt,
-		const std::string& date) 
+		const std::string& date)
     : amount(amt), category(cat), description(desc), wallet(wlt), date(date) {
-        id = ++Transaction::currentID;
+		id = ++Transaction::currentID;
     }
+
+Transaction::Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt,
+		const std::string& date, int id) : id(id), amount(amt), category(cat), description(desc), wallet(wlt), date(date) {}
 
 Transaction::Transaction(const json& transactionObject) {
     id = transactionObject.at("id").get<int>();

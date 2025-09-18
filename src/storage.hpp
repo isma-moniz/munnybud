@@ -16,8 +16,11 @@
 #include <vector>
 #include <ctime>
 
-#define AVG_TRANSACTIONS_PER_DAY 5
+#define TRANSACTIONS_PER_DAY_LOW_ESTIMATE 2
+#define TRANSACTIONS_PER_DAY_HIGH_ESTIMATE 4
 #define AVG_TRANSACTIONS_PER_GROUP 5
+#define AVG_WALLET_ESTIMATE 4
+#define AVG_CAT_ESTIMATE 5
 using json = nlohmann::json;
 
 /**

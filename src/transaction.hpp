@@ -17,6 +17,7 @@ public:
     std::string date;
 
     Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt, const std::string& date);
+	Transaction(int amt, const std::string& cat, const std::string& desc, const std::string& wlt, const std::string& date, int id);
     Transaction(const json& transactionObject);
     json toJson() const;
 };
