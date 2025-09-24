@@ -667,16 +667,17 @@ int StorageHandler::quickRetrieveTransactions(const std::string& base_date, int 
 	//TODO: it's stupid to pass around strings in these internal functions as arguments.
 	//just make an ENUM.
 	if (groupBy == "date") {
-		extractor = [](const Transaction& t) { return t.date; };
+		extractor = [](const Transaction& t) -> std::string_view { return t.date; };
 		result.reserve(masterTransactions.size()/TRANSACTIONS_PER_DAY_LOW_ESTIMATE);
 	} else if (groupBy == "category") {
-		extractor = [](const Transaction& t) { return t.category; };
+		extractor = [](const Transaction& t) -> std::string_view { return t.category; };
 		result.reserve(AVG_CAT_ESTIMATE);
 	} else if (groupBy == "wallet") {
-		extractor = [](const Transaction& t) { return t.wallet; };
+		extractor = [](const Transaction& t) -> std::string_view { return t.wallet; };
 		result.reserve(AVG_WALLET_ESTIMATE);
 	} else
 		throw std::invalid_argument("Invalid groupBy parameter. Must be 'date', 'category' or 'wallet'");
+
 	// no filters
 	if (base_date.empty() && wallet.empty() && category.empty()) {
 		switch(range) {

@@ -70,3 +70,24 @@ void getWeek(const std::chrono::year_month_day& baseDate, std::chrono::year_mont
     firstDay = year_month_day(startOfWeek);
     lastDay = year_month_day(endOfWeek);
 }
+
+int normalizeDate(std::string& date) {
+	int year, month, day;
+	char sep1, sep2;
+
+	std::istringstream iss(date);
+	iss >> year >> sep1 >> month >> sep2 >> day; 
+
+	if (sep1 != '-' || sep2 != '-'
+			|| month > 12 || day > 31) {
+		std::cerr << "Invalid date format! Must be YYYY-MM-DD.\n";
+		return -1;
+	}
+
+	std::ostringstream oss;
+	oss << year << '-' << std::setw(2) << std::setfill('0') << month
+		<< '-' << std::setw(2) << std::setfill('0') << day;
+
+	date = oss.str();
+	return 0;
+}

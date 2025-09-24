@@ -78,7 +78,6 @@ int handleSetupCmd() {
     std::cout << "Done!" << std::endl;
     return 0;
 }
-#include <chrono>
 
 int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandler) {
     std::string transaction = add_cmd.get<std::string>("transaction_type");
@@ -87,6 +86,11 @@ int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandl
     std::string category = add_cmd.get<std::string>("--category");
     std::string label = add_cmd.get<std::string>("--label");
     std::string date = add_cmd.get<std::string>("--date");
+	if (!date.empty()) {
+		if (normalizeDate(date) < 0) {
+			return -1;
+		}
+	}
     std::string wallet = add_cmd.get<std::string>("--wallet");
 	if (wallet.empty()) wallet = "default";
 
@@ -105,6 +109,11 @@ int handleAddCmd(argparse::ArgumentParser& add_cmd, StorageHandler& storageHandl
 
 int handleViewCmd(argparse::ArgumentParser& view_cmd, StorageHandler& storageHandler, Interface& interface) {
     std::string date = view_cmd.get<std::string>("--date");
+	if (!date.empty()) {
+		if (normalizeDate(date) < 0) {
+			return -1;
+		}
+	}
     int rng = view_cmd.get<int>("--range");
     std::string wallet = view_cmd.get<std::string>("--wallet");
     std::string category = view_cmd.get<std::string>("--category");
